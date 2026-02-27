@@ -1,0 +1,15 @@
+# IDE
+.idea/
+__pycache__/
+
+# Venv
+venv/
+
+# Development
+*test*
+build/
+dist/
+*.egg-info/
+
+# Secrets
+service_account.json
