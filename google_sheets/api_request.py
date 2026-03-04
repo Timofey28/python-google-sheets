@@ -1,11 +1,18 @@
 import re
+from enum import StrEnum
 
+from .styles import Color_
 from .spreadsheet_requests import (
     # conditional_format_rule
     AddConditionalFormatRule,
     DeleteConditionalFormatRule,
     UpdateConditionalFormatRule,
     ConditionalFormatRule,
+    BooleanRule,
+    BooleanCondition,
+    ConditionType,
+    ConditionValue,
+    RelativeDate,
     GradientRule,
     InterpolationPoint,
     InterpolationPointType,
@@ -56,7 +63,7 @@ class ApiRequest:
             cell_formats: list[list[CellFormat]] | list[CellFormat] = None
     ) -> dict:
         assert values or cell_formats, 'At least one of the parameters must be specified: values or cell_formats'
-        start_row, end_row, start_col, end_col = ApiRequest.__split_excel_range(range_)
+        start_row, end_row, start_col, end_col = ApiRequest._split_excel_range(range_)
 
         # syntax sugar for single row or column
         if values and not isinstance(values[0], list):
@@ -102,52 +109,169 @@ class ApiRequest:
         ).dict()
 
     @staticmethod
-    def add_conditional_format_rule(
+    def add_boolean_format_rule(
             *,
             sheet_id: int,
             ranges: list[str],
-            gradient_colors: tuple[ColorStyle, ColorStyle, ColorStyle] | tuple[ColorStyle, ColorStyle],
-            gradient_points: tuple[float, float, float] = None
+            condition_type: ConditionType,
+            condition_values: list[ConditionValue] = None,
+            cell_format: CellFormat,
     ) -> dict:
-        grid_ranges = [GridRange(sheet_id=sheet_id, **ApiRequest.__split_excel_range(range_, return_as_dict=True)) for range_ in ranges]
-        if gradient_points is None:
-            gradient_points = (None,) * len(gradient_colors)
-        if len(gradient_colors) == 2:
+        assert not any([
+            cell_format.number_format, cell_format.borders, cell_format.padding,
+            cell_format.horizontal_alignment, cell_format.vertical_alignment,
+            cell_format.wrap_strategy, cell_format.text_direction, cell_format.text_rotation,
+            cell_format.hyperlink_display_type
+        ]), 'Conditional formatting can only apply a subset of formatting: bold, italic, strikethrough, foreground ' \
+            'color and background color (background_color_style and text_format)'
+        grid_ranges = [GridRange(sheet_id=sheet_id, **ApiRequest._split_excel_range(range_, return_as_dict=True)) for range_ in ranges]
+        return AddConditionalFormatRule(rule=ConditionalFormatRule(
+            ranges=grid_ranges,
+            boolean_rule=BooleanRule(
+                condition=BooleanCondition(
+                    type=condition_type,
+                    values=condition_values or []
+                ),
+                format=cell_format
+            )
+        )).dict()
+
+    class GradientRule:
+        IPTypeAndValue = tuple[InterpolationPointType, int | None]  # Type and Value of Interpolation Point
+
+        @staticmethod
+        def add(
+                *,
+                sheet_id: int,
+                ranges: list[str],
+                interpolation_points: tuple[IPTypeAndValue, IPTypeAndValue] | tuple[IPTypeAndValue, IPTypeAndValue, IPTypeAndValue],
+                interpolation_point_colors: tuple[ColorStyle, ColorStyle] | tuple[ColorStyle, ColorStyle, ColorStyle],
+        ) -> dict:
+            assert len(interpolation_points) == len(interpolation_point_colors), 'The number of interpolation points must match the number of its colors'
+            grid_ranges = [GridRange(sheet_id=sheet_id, **ApiRequest._split_excel_range(range_, return_as_dict=True)) for range_ in ranges]
+
+            if len(interpolation_points) == 2:
+                return AddConditionalFormatRule(rule=ConditionalFormatRule(
+                    ranges=grid_ranges,
+                    gradient_rule=GradientRule(
+                        minpoint=InterpolationPoint(
+                            color_style=interpolation_point_colors[0],
+                            type=interpolation_points[0][0],
+                            value=str(interpolation_points[0][1]) if interpolation_points[0][1] is not None else None
+                        ),
+                        maxpoint=InterpolationPoint(
+                            color_style=interpolation_point_colors[1],
+                            type=interpolation_points[1][0],
+                            value=str(interpolation_points[1][1]) if interpolation_points[1][1] is not None else None
+                        )
+                    )
+                )).dict()
+
             return AddConditionalFormatRule(rule=ConditionalFormatRule(
                 ranges=grid_ranges,
                 gradient_rule=GradientRule(
                     minpoint=InterpolationPoint(
-                        color_style=gradient_colors[0],
-                        type=InterpolationPointType.MIN,
-                        value=str(gradient_points[0])
+                        color_style=interpolation_point_colors[0],
+                        type=interpolation_points[0][0],
+                        value=str(interpolation_points[0][1]) if interpolation_points[0][1] is not None else None
+                    ),
+                    midpoint=InterpolationPoint(
+                        color_style=interpolation_point_colors[1],
+                        type=interpolation_points[1][0],
+                        value=str(interpolation_points[1][1]) if interpolation_points[1][1] is not None else None
                     ),
                     maxpoint=InterpolationPoint(
-                        color_style=gradient_colors[1],
-                        type=InterpolationPointType.MAX,
-                        value=str(gradient_points[1])
+                        color_style=interpolation_point_colors[2],
+                        type=interpolation_points[2][0],
+                        value=str(interpolation_points[2][1]) if interpolation_points[2][1] is not None else None
                     )
                 )
             )).dict()
-        return AddConditionalFormatRule(rule=ConditionalFormatRule(
-            ranges=grid_ranges,
-            gradient_rule=GradientRule(
-                minpoint=InterpolationPoint(
-                    color_style=gradient_colors[0],
-                    type=InterpolationPointType.NUMBER,
-                    value=str(gradient_points[0])
-                ),
-                midpoint=InterpolationPoint(
-                    color_style=gradient_colors[1],
-                    type=InterpolationPointType.NUMBER,
-                    value=str(gradient_points[1])
-                ),
-                maxpoint=InterpolationPoint(
-                    color_style=gradient_colors[2],
-                    type=InterpolationPointType.NUMBER,
-                    value=str(gradient_points[2])
-                )
-            )
-        )).dict()
+
+        class Preset(StrEnum):
+            # Two interpolation points
+            WHITE_GREEN = 'WHITE_GREEN'
+            WHITE_YELLOW = 'WHITE_YELLOW'
+            WHITE_RED = 'WHITE_RED'
+            GREEN_WHITE = 'GREEN_WHITE'
+            YELLOW_WHITE = 'YELLOW_WHITE'
+            RED_WHITE = 'RED_WHITE'
+
+            # Three interpolation points
+            RED_WHITE_GREEN_PERCENTILE = 'RED_WHITE_GREEN_PERCENTILE'
+            RED_WHITE_GREEN_PERCENT = 'RED_WHITE_GREEN_PERCENT'
+            GREEN_YELLOW_RED_PERCENTILE = 'GREEN_YELLOW_RED_PERCENTILE'
+            GREEN_YELLOW_RED_PERCENT = 'GREEN_YELLOW_RED_PERCENT'
+            GREEN_WHITE_RED_PERCENTILE = 'GREEN_WHITE_RED_PERCENTILE'
+            GREEN_WHITE_RED_PERCENT = 'GREEN_WHITE_RED_PERCENT'
+            RED_YELLOW_GREEN_PERCENTILE = 'RED_YELLOW_GREEN_PERCENTILE'
+            RED_YELLOW_GREEN_PERCENT = 'RED_YELLOW_GREEN_PERCENT'
+
+        @staticmethod
+        def add_preset(*, sheet_id: int, ranges: list[str], preset: Preset) -> dict:
+            grid_ranges = [GridRange(sheet_id=sheet_id, **ApiRequest._split_excel_range(range_, return_as_dict=True)) for range_ in ranges]
+            AGP = ApiRequest.GradientRule.Preset
+
+            if preset in (AGP.WHITE_GREEN, AGP.WHITE_YELLOW, AGP.WHITE_RED, AGP.GREEN_WHITE, AGP.YELLOW_WHITE, AGP.RED_WHITE):
+                if preset == AGP.WHITE_YELLOW:
+                    minpoint_color_style, maxpoint_color_style = Color_.Basic.WHITE, Color_.ConditionalFormatting.YELLOW
+                elif preset == AGP.WHITE_RED:
+                    minpoint_color_style, maxpoint_color_style = Color_.Basic.WHITE, Color_.ConditionalFormatting.RED
+                elif preset == AGP.GREEN_WHITE:
+                    minpoint_color_style, maxpoint_color_style = Color_.ConditionalFormatting.GREEN, Color_.Basic.WHITE
+                elif preset == AGP.YELLOW_WHITE:
+                    minpoint_color_style, maxpoint_color_style = Color_.ConditionalFormatting.YELLOW, Color_.Basic.WHITE
+                elif preset == AGP.RED_WHITE:
+                    minpoint_color_style, maxpoint_color_style = Color_.ConditionalFormatting.RED, Color_.Basic.WHITE
+                else:  # preset == AGP.WHITE_GREEN and default
+                    minpoint_color_style, maxpoint_color_style = Color_.Basic.WHITE, Color_.ConditionalFormatting.GREEN
+
+                return AddConditionalFormatRule(rule=ConditionalFormatRule(
+                    ranges=grid_ranges,
+                    gradient_rule=GradientRule(
+                        minpoint=InterpolationPoint(
+                            color_style=minpoint_color_style,
+                            type=InterpolationPointType.MIN,
+                        ),
+                        maxpoint=InterpolationPoint(
+                            color_style=maxpoint_color_style,
+                            type=InterpolationPointType.MAX,
+                        )
+                    )
+                )).dict()
+
+            else:  # three interpolation points
+                if preset in (AGP.RED_WHITE_GREEN_PERCENTILE, AGP.RED_WHITE_GREEN_PERCENT):
+                    minpoint_cs, midpoint_cs, maxpoint_cs = Color_.ConditionalFormatting.RED, Color_.Basic.WHITE, Color_.ConditionalFormatting.GREEN
+                    midpoint_type = InterpolationPointType.PERCENTILE if preset == AGP.RED_WHITE_GREEN_PERCENTILE else InterpolationPointType.PERCENT
+                elif preset in (AGP.GREEN_YELLOW_RED_PERCENTILE, AGP.GREEN_YELLOW_RED_PERCENT):
+                    minpoint_cs, midpoint_cs, maxpoint_cs = Color_.ConditionalFormatting.GREEN, Color_.ConditionalFormatting.YELLOW, Color_.ConditionalFormatting.RED
+                    midpoint_type = InterpolationPointType.PERCENTILE if preset == AGP.GREEN_YELLOW_RED_PERCENTILE else InterpolationPointType.PERCENT
+                elif preset in (AGP.GREEN_WHITE_RED_PERCENTILE, AGP.GREEN_WHITE_RED_PERCENT):
+                    minpoint_cs, midpoint_cs, maxpoint_cs = Color_.ConditionalFormatting.GREEN, Color_.Basic.WHITE, Color_.ConditionalFormatting.RED
+                    midpoint_type = InterpolationPointType.PERCENTILE if preset == AGP.GREEN_WHITE_RED_PERCENTILE else InterpolationPointType.PERCENT
+                else:  # preset in (AGP.RED_YELLOW_GREEN_PERCENTILE, AGP.RED_YELLOW_GREEN_PERCENT):
+                    minpoint_cs, midpoint_cs, maxpoint_cs = Color_.ConditionalFormatting.RED, Color_.ConditionalFormatting.YELLOW, Color_.ConditionalFormatting.GREEN
+                    midpoint_type = InterpolationPointType.PERCENTILE if preset == AGP.RED_YELLOW_GREEN_PERCENTILE else InterpolationPointType.PERCENT
+
+                return AddConditionalFormatRule(rule=ConditionalFormatRule(
+                    ranges=grid_ranges,
+                    gradient_rule=GradientRule(
+                        minpoint=InterpolationPoint(
+                            color_style=minpoint_cs,
+                            type=InterpolationPointType.MIN,
+                        ),
+                        midpoint=InterpolationPoint(
+                            color_style=midpoint_cs,
+                            type=midpoint_type,
+                            value=50
+                        ),
+                        maxpoint=InterpolationPoint(
+                            color_style=maxpoint_cs,
+                            type=InterpolationPointType.MAX,
+                        )
+                    )
+                )).dict()
 
     @staticmethod
     def delete_conditional_format_rule(*, sheet_id: int, index: int) -> dict:
@@ -200,7 +324,7 @@ class ApiRequest:
 
     @staticmethod
     def merge_cells(sheet_id: int, range_: str, merge_type: MergeType = MergeType.MERGE_ALL) -> dict:
-        start_row, end_row, start_col, end_col = ApiRequest.__split_excel_range(range_)
+        start_row, end_row, start_col, end_col = ApiRequest._split_excel_range(range_)
         return MergeCells(
             range=GridRange(
                 sheet_id=sheet_id,
@@ -223,10 +347,10 @@ class ApiRequest:
     ) -> dict:
         assert range_ or (start_row and end_row and start_column and end_column), 'Either range_ or start_row, end_row, start_column, end_column must be specified'
         if range_:  # range_ has priority
-            start_row, end_row, start_column, end_column = ApiRequest.__split_excel_range(range_)
+            start_row, end_row, start_column, end_column = ApiRequest._split_excel_range(range_)
         else:
-            start_column = ApiRequest.__get_column_index(start_column) if isinstance(start_column, str) else start_column
-            end_column = ApiRequest.__get_column_index(end_column) if isinstance(end_column, str) else end_column
+            start_column = ApiRequest._get_column_index(start_column) if isinstance(start_column, str) else start_column
+            end_column = ApiRequest._get_column_index(end_column) if isinstance(end_column, str) else end_column
         return UnmergeCells(
             range=GridRange(
                 sheet_id=sheet_id,
@@ -304,7 +428,7 @@ class ApiRequest:
     @staticmethod
     def set_column_width(sheet_id: int, col_no_or_letter: int | str, width: int) -> dict:
         if isinstance(col_no_or_letter, str):
-            col_no = ApiRequest.__get_column_index(col_no_or_letter)
+            col_no = ApiRequest._get_column_index(col_no_or_letter)
         else:
             col_no = col_no_or_letter
         return UpdateDimensionProperties(
@@ -417,22 +541,22 @@ class ApiRequest:
         )).dict()
 
     @staticmethod
-    def __split_excel_range(range_: str, return_as_dict: bool = False) -> tuple[int, int, int, int] | dict[str, int]:
+    def _split_excel_range(range_: str, return_as_dict: bool = False) -> tuple[int, int, int, int] | dict[str, int]:
         if ':' in range_:
-            match = re.match(r"([A-Z]+)(\d+):([A-Z]+)(\d+)$", range_)
+            match = re.match(r'([A-Z]+)(\d+):([A-Z]+)(\d+)$', range_)
             if not match:
                 raise ValueError(f'Unsupported range format: {range_}')
             start_column, start_row, end_column, end_row = match.groups()
 
         else:
-            match = re.match(r"([A-Z]+)(\d+)$", range_)
+            match = re.match(r'([A-Z]+)(\d+)$', range_)
             if not match:
                 raise ValueError(f'Unsupported range format: {range_}')
             start_column, start_row = match.groups()
             end_column, end_row = start_column, start_row
 
         start_row, end_row = int(start_row), int(end_row)
-        start_column, end_column = ApiRequest.__get_column_index(start_column), ApiRequest.__get_column_index(end_column)
+        start_column, end_column = ApiRequest._get_column_index(start_column), ApiRequest._get_column_index(end_column)
         if start_row > end_row or start_column > end_column:
             raise ValueError(f'Invalid range: {range_}')
 
@@ -446,7 +570,7 @@ class ApiRequest:
         return start_row, end_row, start_column, end_column
 
     @staticmethod
-    def __get_column_index(column_letters: str) -> int:
+    def _get_column_index(column_letters: str) -> int:
         column_index = 0
         for i, letter in enumerate(column_letters[::-1].upper()):
             column_index += (ord(letter) - 64) * (26 ** i)

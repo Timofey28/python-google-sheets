@@ -3,6 +3,11 @@ from .conditional_format_rule import (
     DeleteConditionalFormatRule,
     UpdateConditionalFormatRule,
     ConditionalFormatRule,
+    BooleanRule,
+    BooleanCondition,
+    ConditionType,
+    ConditionValue,
+    RelativeDate,
     GradientRule,
     InterpolationPoint,
     InterpolationPointType,
@@ -57,4 +62,5 @@ from .general_models import (
     ColorStyle,
     GridRange,
     FieldMask,
+    SimpleType,
 )

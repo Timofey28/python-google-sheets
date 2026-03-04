@@ -19,57 +19,57 @@ class RecalculationInterval(StrEnum):
 class SpreadsheetProperties(BaseModel):
     title: str
     locale: str = 'ru_RU'
-    auto_recalc: RecalculationInterval = Field(None, alias='autoRecalc')
+    auto_recalc: RecalculationInterval | None = Field(None, alias='autoRecalc')
     time_zone: str = Field('Europe/Moscow', alias='timeZone')
-    iterative_calculation_settings: dict = Field(None, alias='iterativeCalculationSettings')
-    spreadsheet_theme: dict = Field(None, alias='spreadsheetTheme')
-    import_functions_external_url_access_allowed: bool = Field(None, alias='importFunctionsExternalUrlAccessAllowed')
+    iterative_calculation_settings: dict | None = Field(None, alias='iterativeCalculationSettings')
+    spreadsheet_theme: dict | None = Field(None, alias='spreadsheetTheme')
+    import_functions_external_url_access_allowed: bool | None = Field(None, alias='importFunctionsExternalUrlAccessAllowed')
 
     # Read-only
-    default_format: dict = Field(None, alias='defaultFormat')
+    default_format: dict | None = Field(None, alias='defaultFormat')
 
     class Config:
         populate_by_name = True
 
 
 class GridData(BaseModel):
-    start_row: int = Field(None, alias='startRow')
-    start_column: int = Field(None, alias='startColumn')
-    row_data: list[RowData] = Field(None, alias='rowData')
-    row_metadata: list[DimensionProperties] = Field(None, alias='rowMetadata')
-    column_metadata: list[DimensionProperties] = Field(None, alias='columnMetadata')
+    start_row: int | None = Field(None, alias='startRow')
+    start_column: int | None = Field(None, alias='startColumn')
+    row_data: list[RowData] | None = Field(None, alias='rowData')
+    row_metadata: list[DimensionProperties] | None = Field(None, alias='rowMetadata')
+    column_metadata: list[DimensionProperties] | None = Field(None, alias='columnMetadata')
 
 
 class Sheet(BaseModel):
     properties: SheetProperties = None
-    data: list[GridData] = None
-    merges: list[GridRange] = None
-    conditional_formats: list[ConditionalFormatRule] = Field(None, alias='conditionalFormats')
-    filter_views: list[dict] = Field(None, alias='filterViews')
-    protected_ranges: list[dict] = Field(None, alias='protectedRanges')
-    basic_filter: dict = Field(None, alias='basicFilter')
-    charts: list[dict] = None
-    banded_ranges: list[dict] = Field(None, alias='bandedRanges')
-    developer_metadata: list[dict] = Field(None, alias='developerMetadata')
-    row_groups: list[dict] = Field(None, alias='rowGroups')
-    column_groups: list[dict] = Field(None, alias='columnGroups')
-    slicers: list[dict] = None
+    data: list[GridData] | None = None
+    merges: list[GridRange] | None = None
+    conditional_formats: list[ConditionalFormatRule] | None = Field(None, alias='conditionalFormats')
+    filter_views: list[dict] | None = Field(None, alias='filterViews')
+    protected_ranges: list[dict] | None = Field(None, alias='protectedRanges')
+    basic_filter: dict | None = Field(None, alias='basicFilter')
+    charts: list[dict] | None = None
+    banded_ranges: list[dict] | None = Field(None, alias='bandedRanges')
+    developer_metadata: list[dict] | None = Field(None, alias='developerMetadata')
+    row_groups: list[dict] | None = Field(None, alias='rowGroups')
+    column_groups: list[dict] | None = Field(None, alias='columnGroups')
+    slicers: list[dict] | None = None
 
     class Config:
         populate_by_name = True
 
 
 class Spreadsheet(BaseModel):
-    properties: SpreadsheetProperties = None
-    sheets: list[Sheet] = None
-    named_ranges: list[dict] = Field(None, alias='namedRanges')
-    developer_metadata: list[dict] = Field(None, alias='developerMetadata')
-    data_sources: list[dict] = Field(None, alias='dataSources')
+    properties: SpreadsheetProperties | None = None
+    sheets: list[Sheet] | None = None
+    named_ranges: list[dict] | None = Field(None, alias='namedRanges')
+    developer_metadata: list[dict] | None = Field(None, alias='developerMetadata')
+    data_sources: list[dict] | None = Field(None, alias='dataSources')
 
     # Read-only
-    spreadsheet_id: str = Field(None, alias='spreadsheetId')
-    spreadsheet_url: str = Field(None, alias='spreadsheetUrl')
-    data_source_schedules: list[dict] = Field(None, alias='dataSourceSchedules')
+    spreadsheet_id: str | None = Field(None, alias='spreadsheetId')
+    spreadsheet_url: str | None = Field(None, alias='spreadsheetUrl')
+    data_source_schedules: list[dict] | None = Field(None, alias='dataSourceSchedules')
 
     class Config:
         populate_by_name = True

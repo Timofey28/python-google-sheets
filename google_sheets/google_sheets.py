@@ -1,17 +1,20 @@
+from typing import TYPE_CHECKING
+
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from .spreadsheet_requests import Spreadsheet, SheetProperties
+from .spreadsheet_requests import Spreadsheet, SheetProperties, SimpleType
 
-SimpleType = str | int | float | bool
+if TYPE_CHECKING:
+    from googleapiclient.discovery import Resource  # noqa
 
 DEFAULT_PATH_TO_CREDS = 'service_account.json'
 
 
 class GoogleSheets:
     @staticmethod
-    def build_service(path_to_creds: str = DEFAULT_PATH_TO_CREDS):
+    def build_service(path_to_creds: str = DEFAULT_PATH_TO_CREDS) -> 'Resource':
         SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
         try:
             credentials = Credentials.from_service_account_file(path_to_creds, scopes=SCOPES)
@@ -82,7 +85,7 @@ class GoogleSheets:
         return spreadsheet_id, f'https://docs.google.com/spreadsheets/d/{spreadsheet_id}'
 
     @staticmethod
-    def update_spreadsheet(spreadsheet_id: str, api_requests: list[dict], service=None) -> None:
+    def update_spreadsheet(spreadsheet_id: str, api_requests: list[dict], service: 'Resource') -> None:
         """
         Updates Google Sheet with the specified API requests.
 
@@ -91,19 +94,13 @@ class GoogleSheets:
             api_requests (list[dict]): List of API requests to update the table
             service (googleapiclient.discovery.Resource): Google Sheets service object
         """
-        if service is None:
-            service = GoogleSheets.build_service()
-
         try:
             service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body={'requests': api_requests}).execute(num_retries=5)
         except HttpError as e:
             raise e
 
     @staticmethod
-    def copy_sheet(source_spreadsheet_id: str, destination_spreadsheet_id: str, source_sheet_id: str = 0, service=None) -> SheetProperties:
-        if service is None:
-            service = GoogleSheets.build_service()
-
+    def copy_sheet(source_spreadsheet_id: str, source_sheet_id: str, destination_spreadsheet_id: str, service: 'Resource') -> SheetProperties:
         request = service.spreadsheets().sheets().copyTo(
             spreadsheetId=source_spreadsheet_id,
             sheetId=source_sheet_id,
@@ -115,14 +112,16 @@ class GoogleSheets:
             raise e
 
     @staticmethod
-    def get_spreadsheet(spreadsheet_id: str, service=None) -> Spreadsheet:
-        if service is None:
-            service = GoogleSheets.build_service()
-
+    def get_spreadsheet(spreadsheet_id: str, service: 'Resource') -> Spreadsheet:
         return Spreadsheet.model_validate(service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute(num_retries=5))
 
     @staticmethod
-    def get_spreadsheet_range_values(spreadsheet_id: str, sheet: str | int, ranges: list[str], service=None) -> list[list[SimpleType] | list[list[SimpleType]]]:
+    def get_spreadsheet_range_values(
+            spreadsheet_id: str,
+            sheets: list[str | int],
+            ranges: list[list[str]],
+            service: 'Resource'
+    ) -> list[list[SimpleType] | list[list[SimpleType]]]:
         """
         Reads values from the specified ranges of the table.
         IMPORTANT: If the last cells in the range are empty, they will be omitted. If all cells are empty, an empty
@@ -131,30 +130,32 @@ class GoogleSheets:
 
         Args:
             spreadsheet_id (str): ID of the table
-            sheet (str | int): Name or ID of the sheet
-            ranges (list[str]): List of ranges to read in A1 notation
+            sheets (list[str | int]): Name or ID of the sheets to read from
+            ranges (list[list[str]]): List of ranges from each sheet to read in A1 notation
             service (googleapiclient.discovery.Resource): Google Sheets service object
 
         Returns:
-            list[list[str]]: List of values from the specified ranges in the same order
+            list[list[SimpleType] | list[list[SimpleType]]]: List of values from the specified ranges. Each range
+            corresponds to an element in the list. If the range is a single row or a single column, a list of values
+            is returned Otherwise, a list of lists of values is returned.
         """
-        if service is None:
-            service = GoogleSheets.build_service()
+        assert len(sheets) == len(ranges), 'sheets and ranges must have the same length'
 
-        if isinstance(sheet, int):
+        ranges_processed = []
+        if any(isinstance(sheet, int) for sheet in sheets):
             ss = GoogleSheets.get_spreadsheet(spreadsheet_id, service)
-            try:
-                sheet_name = next(sht.properties.title for sht in ss.sheets if sht.properties.sheet_id == sheet)
-            except StopIteration:
-                return []
-        else:
-             sheet_name = sheet
-        ranges = [f'{sheet_name}!{range_}' for range_ in ranges]
+            for i in range(len(sheets)):
+                if isinstance(sheets[i], int):
+                    try:
+                        sheets[i] = next(sht.properties.title for sht in ss.sheets if sht.properties.sheet_id == sheets[i])
+                    except StopIteration:
+                        return [[]]
+                ranges_processed.extend([f'{sheets[i]}!{range_}' for range_ in ranges[i]])
 
         try:
             response = service.spreadsheets().values().batchGet(
                 spreadsheetId=spreadsheet_id,
-                ranges=ranges,
+                ranges=ranges_processed,
                 valueRenderOption='UNFORMATTED_VALUE',
                 dateTimeRenderOption='FORMATTED_STRING'
             ).execute(num_retries=5)

@@ -16,6 +16,9 @@ from .spreadsheet_requests import (
     WrapStrategy,
     Spreadsheet,
     SheetProperties,
+    ConditionType,
+    ConditionValue,
+    InterpolationPointType,
 )
 from .utils import col_num_to_letter, float_sum, rowcol_to_a1
 from .api_request import ApiRequest

@@ -3,6 +3,9 @@ from enum import StrEnum
 from pydantic import BaseModel, Field, model_validator
 
 
+SimpleType = str | int | float | bool
+
+
 class ThemeColorType(StrEnum):
     TEXT = 'TEXT'
     BACKGROUND = 'BACKGROUND'

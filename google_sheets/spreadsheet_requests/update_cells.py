@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 from enum import StrEnum
-from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -40,15 +39,16 @@ class Style(StrEnum):
 
 class Border(BaseModel):
     style: Style
-    color_style: ColorStyle = Field(None, serialization_alias='colorStyle')
+    color_style: ColorStyle | None = Field(None, serialization_alias='colorStyle')
 
 class Borders(BaseModel):
-    top: Optional[Border] = None
-    bottom: Optional[Border] = None
-    left: Optional[Border] = None
-    right: Optional[Border] = None
+    top: Border | None = None
+    bottom: Border | None = None
+    left: Border | None = None
+    right: Border | None = None
 
     @model_validator(mode='before')
+    @classmethod
     def check_exclusive_fields(cls, values):
         filled_fields = [key for key, value in values.items() if value is not None]
         if len(filled_fields) == 0:
@@ -57,12 +57,13 @@ class Borders(BaseModel):
 
 
 class Padding(BaseModel):
-    top: Optional[int]
-    right: Optional[int]
-    bottom: Optional[int]
-    left: Optional[int]
+    top: int | None
+    right: int | None
+    bottom: int | None
+    left: int | None
 
     @model_validator(mode='before')
+    @classmethod
     def check_exclusive_fields(cls, values):
         filled_fields = [key for key, value in values.items() if value is not None]
         if len(filled_fields) == 0:
@@ -97,14 +98,14 @@ class Link:
     uri: str = None
 
 class TextFormat(BaseModel):
-    foreground_color_style: Optional[ColorStyle] = Field(None, serialization_alias='foregroundColorStyle')
-    font_family: Optional[str] = Field(None, serialization_alias='fontFamily')
-    font_size: Optional[int] = Field(None, serialization_alias='fontSize')
-    bold: Optional[bool] = None
-    italic: Optional[bool] = None
-    strikethrough: Optional[bool] = None
-    underline: Optional[bool] = None
-    link: Optional[Link] = None
+    foreground_color_style: ColorStyle | None = Field(None, serialization_alias='foregroundColorStyle')
+    font_family: str | None = Field(None, serialization_alias='fontFamily')
+    font_size: int | None = Field(None, serialization_alias='fontSize')
+    bold: bool | None = None
+    italic: bool | None = None
+    strikethrough: bool | None = None
+    underline: bool | None = None
+    link: Link | None = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -116,10 +117,11 @@ class HyperlinkDisplayType(StrEnum):
 
 
 class TextRotation(BaseModel):
-    angle: int = Field(None, ge=-90, le=90)  # Angle between the standard orientation and the desired orientation, direction is counterclockwise
-    vertical: bool = None  # Text reads top to bottom, but the orientation of individual characters is unchanged
+    angle: int | None = Field(None, ge=-90, le=90)  # Angle between the standard orientation and the desired orientation, direction is counterclockwise
+    vertical: bool | None = None  # Text reads top to bottom, but the orientation of individual characters is unchanged
 
     @model_validator(mode='before')
+    @classmethod
     def check_exclusive_fields(cls, values):
         filled_fields = [key for key, value in values.items() if value is not None]
         if len(filled_fields) != 1:
@@ -128,17 +130,17 @@ class TextRotation(BaseModel):
 
 
 class CellFormat(BaseModel):
-    number_format: Optional[NumberFormat] = Field(None, alias='numberFormat')
-    background_color_style: Optional[ColorStyle] = Field(None, alias='backgroundColorStyle')
-    borders: Optional[Borders] = None
-    padding: Optional[Padding] = None
-    horizontal_alignment: Optional[HorizontalAlignment] = Field(None, alias='horizontalAlignment')
-    vertical_alignment: Optional[VerticalAlignment] = Field(None, alias='verticalAlignment')
-    wrap_strategy: Optional[WrapStrategy] = Field(None, alias='wrapStrategy')
-    text_direction: Optional[TextDirection] = Field(None, alias='textDirection')
-    text_format: Optional[TextFormat] = Field(None, alias='textFormat')
-    hyperlink_display_type: Optional[HyperlinkDisplayType] = Field(None, alias='hyperlinkDisplayType')
-    text_rotation: Optional[TextRotation] = Field(None, alias='textRotation')
+    number_format: NumberFormat | None = Field(None, alias='numberFormat')
+    background_color_style: ColorStyle | None = Field(None, alias='backgroundColorStyle')
+    borders: Borders | None = None
+    padding: Padding | None = None
+    horizontal_alignment: HorizontalAlignment | None = Field(None, alias='horizontalAlignment')
+    vertical_alignment: VerticalAlignment | None = Field(None, alias='verticalAlignment')
+    wrap_strategy: WrapStrategy | None = Field(None, alias='wrapStrategy')
+    text_direction: TextDirection | None = Field(None, alias='textDirection')
+    text_format: TextFormat | None = Field(None, alias='textFormat')
+    hyperlink_display_type: HyperlinkDisplayType | None = Field(None, alias='hyperlinkDisplayType')
+    text_rotation: TextRotation | None = Field(None, alias='textRotation')
 
     def __add__(self, other) -> CellFormat:
         number_format = other.number_format or self.number_format
@@ -189,15 +191,16 @@ class CellFormat(BaseModel):
 
 
 class ExtendedValue(BaseModel):
-    number_value: Optional[float] = Field(None, alias='numberValue')
-    string_value: Optional[str] = Field(None, alias='stringValue')
-    bool_value: Optional[bool] = Field(None, alias='boolValue')
-    formula_value: Optional[str] = Field(None, alias='formulaValue')
+    number_value: float | None = Field(None, alias='numberValue')
+    string_value: str | None = Field(None, alias='stringValue')
+    bool_value: bool | None = Field(None, alias='boolValue')
+    formula_value: str | None = Field(None, alias='formulaValue')
 
     # Read-only
-    error_value: dict = Field(None, alias='errorValue')
+    error_value: dict | None = Field(None, alias='errorValue')
 
     @model_validator(mode='before')
+    @classmethod
     def check_exclusive_fields(cls, values):
         filled_fields = [key for key, value in values.items() if value is not None]
         if len(filled_fields) != 1:
@@ -209,20 +212,20 @@ class ExtendedValue(BaseModel):
 
 
 class CellData(BaseModel):
-    user_entered_value: Optional[ExtendedValue] = Field(None, alias='userEnteredValue')
-    user_entered_format: Optional[CellFormat] = Field(None, alias='userEnteredFormat')
-    note: str = None
-    text_format_runs: list[dict] = Field(None, alias='textFormatRuns')
-    data_validation: dict = Field(None, alias='dataValidation')
-    pivot_table: dict = Field(None, alias='pivotTable')
-    data_source_table: dict = Field(None, alias='dataSourceTable')
-    data_source_formula: dict = Field(None, alias='dataSourceFormula')
+    user_entered_value: ExtendedValue | None = Field(None, alias='userEnteredValue')
+    user_entered_format: CellFormat | None = Field(None, alias='userEnteredFormat')
+    note: str | None = None
+    text_format_runs: list[dict] | None = Field(None, alias='textFormatRuns')
+    data_validation: dict | None = Field(None, alias='dataValidation')
+    pivot_table: dict | None = Field(None, alias='pivotTable')
+    data_source_table: dict | None = Field(None, alias='dataSourceTable')
+    data_source_formula: dict | None = Field(None, alias='dataSourceFormula')
 
     # Read-only
-    effective_value: ExtendedValue = Field(None, alias='effectiveValue')
-    formatted_value: str = Field(None, alias='formattedValue')
-    effective_format: CellFormat = Field(None, alias='effectiveFormat')
-    hyperlink: str = None
+    effective_value: ExtendedValue | None = Field(None, alias='effectiveValue')
+    formatted_value: str | None = Field(None, alias='formattedValue')
+    effective_format: CellFormat | None = Field(None, alias='effectiveFormat')
+    hyperlink: str | None = None
     
     class Config:
         populate_by_name = True

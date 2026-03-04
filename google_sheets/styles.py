@@ -48,6 +48,20 @@ class Color_:
         else:
             return ColorStyle(rgb_color=Color(red=red/255, green=green/255, blue=blue/255))
 
+    class ConditionalFormatting:
+        # Single color templates
+        GREEN_LIGHT = CS(Color(red=183/255, green=225/255, blue=205/255))
+        YELLOW_LIGHT = CS(Color(red=252/255, green=232/255, blue=178/255))
+        RED_LIGHT = CS(Color(red=244/255, green=199/255, blue=195/255))
+        GREEN_TEXT = CS(Color(red=11/255, green=128/255, blue=67/255))
+        YELLOW_TEXT = CS(Color(red=240/255, green=147/255, blue=0))
+        RED_TEXT = CS(Color(red=197/255, green=57/255, blue=41/255))
+
+        # Gradient templates
+        GREEN = CS(Color(red=87/255, green=187/255, blue=138/255))
+        YELLOW = CS(Color(red=1, green=214/255, blue=102/255))
+        RED = CS(Color(red=230/255, green=124/255, blue=115/255))
+
     class Basic:  # Готовые цвета в гугл-таблице, формат констант: "PLACE_<строка>_<столбец>", индексация с единицы
         # 1 строка - серые оттенки
         PLACE_1_1 = BLACK = CS(Color(red=0, green=0, blue=0))  #000000 - черный
