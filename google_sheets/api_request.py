@@ -43,14 +43,15 @@ from .spreadsheet_requests import (
     ExtendedValue,
     CellFormat,
 
+    # spreadsheet
+    AddSheet,
+    DeleteSheet,
+
     # general_models
     ColorStyle,
     GridRange,
     FieldMask,
-
-    # spreadsheet
-    AddSheet,
-    DeleteSheet,
+    SimpleType,
 )
 
 
@@ -59,7 +60,7 @@ class ApiRequest:
     def update_cells(
             sheet_id: int,
             range_: str,
-            values: list[list[int | float | bool | str]] | list[int | float | bool | str] = None,
+            values: list[list[SimpleType]] | list[SimpleType] = None,
             cell_formats: list[list[CellFormat]] | list[CellFormat] = None
     ) -> dict:
         assert values or cell_formats, 'At least one of the parameters must be specified: values or cell_formats'

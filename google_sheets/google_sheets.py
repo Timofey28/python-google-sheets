@@ -178,18 +178,3 @@ class GoogleSheets:
                         result.append(values)
 
             return result
-
-    @staticmethod
-    def get_spreadsheet_id_from_url(url: str) -> str:
-        """
-        Extracts the ID of the spreadsheet from the URL.
-
-        Args:
-            url (str): URL of the table
-
-        Returns:
-            str: ID of the table
-        """
-        if '/edit' in url:
-            url = url[:url.index('/edit')]
-        return url.split('/')[-1]
