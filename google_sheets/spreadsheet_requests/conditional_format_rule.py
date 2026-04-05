@@ -100,7 +100,7 @@ class ConditionType(StrEnum):
 
 class BooleanCondition(BaseModel):
     type: ConditionType
-    values: list[ConditionValue]
+    values: list[ConditionValue] = Field(default_factory=list)
 
 
 class BooleanRule(BaseModel):
