@@ -29,6 +29,7 @@ from .spreadsheet_requests import (
 
     # dimension
     InsertDimension,
+    DeleteDimension,
     UpdateDimensionProperties,
     AddDimensionGroup,
     DeleteDimensionGroup,
@@ -407,6 +408,38 @@ class ApiRequest:
                 end_index=end_index + 1
             ),
             inherit_from_before=inherit_from_before
+        ).dict()
+
+    @staticmethod
+    def delete_rows(sheet_id: int, start_index: int, end_index: int = None):
+        """
+        Indexes are zero-based and inclusive [start_index, end_index]. If end_index is not specified, then a single
+        row at start_index will be deleted.
+        """
+        end_index = end_index or start_index
+        return DeleteDimension(
+            range=DimensionRange(
+                sheet_id=sheet_id,
+                dimension=Dimension.ROWS,
+                start_index=start_index,
+                end_index=end_index + 1
+            )
+        ).dict()
+
+    @staticmethod
+    def delete_columns(sheet_id: int, start_index: int, end_index: int = None):
+        """
+        Indexes are zero-based and inclusive [start_index, end_index]. If end_index is not specified, then a single
+        column at start_index will be deleted.
+        """
+        end_index = end_index or start_index
+        return DeleteDimension(
+            range=DimensionRange(
+                sheet_id=sheet_id,
+                dimension=Dimension.COLUMNS,
+                start_index=start_index,
+                end_index=end_index + 1
+            )
         ).dict()
 
     @staticmethod

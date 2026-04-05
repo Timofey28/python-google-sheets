@@ -24,6 +24,7 @@ from .merge_cells import (
 )
 from .dimension import (
     InsertDimension,
+    DeleteDimension,
     UpdateDimensionProperties,
     AddDimensionGroup,
     DeleteDimensionGroup,

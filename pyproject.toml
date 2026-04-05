@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "python-google-sheets"
 description = "A lightweight and efficient Python wrapper for the Google Sheets API v4"
 authors = [{ name = "Timofey Egorov", email = "timegorr@gmail.com" }]
-version = "1.0.1"
+version = "1.1.0"
 readme = "README.md"
 requires-python = ">=3.11"
 classifiers = [

@@ -51,6 +51,14 @@ class InsertDimension(BaseModel):
         return {class_name: json.loads(super().json(*args, **kwargs, by_alias=True, exclude_none=True))}
 
 
+class DeleteDimension(BaseModel):
+    range: DimensionRange
+
+    def dict(self, *args, **kwargs):
+        class_name = self.__class__.__name__[0].lower() + self.__class__.__name__[1:]
+        return {class_name: json.loads(super().json(*args, **kwargs, by_alias=True, exclude_none=True))}
+
+
 class UpdateDimensionProperties(BaseModel):
     range: DimensionRange
     properties: DimensionProperties

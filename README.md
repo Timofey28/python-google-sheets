@@ -135,6 +135,7 @@ req = ApiRequest.update_cells(
 )
 ```
 
+---
 ### Conditional formatting
 
 ### `add_boolean_format_rule(*, sheet_id: int, ranges: list[str], condition_type: ConditionType, condition_values: list[ConditionValue] = None, cell_format: CellFormat) -> dict`
@@ -295,6 +296,7 @@ req = ApiRequest.add_sheet(
 )
 ```
 
+---
 ### Merge and freeze
 
 ### `merge_cells(sheet_id: int, range_: str, merge_type: MergeType = MergeType.MERGE_ALL) -> dict`
@@ -318,24 +320,39 @@ Freeze top rows and/or left columns.
 req = ApiRequest.freeze(sheet_id=0, rows=1, columns=1)
 ```
 
+---
 ### Rows and columns
 
 ### `insert_rows(sheet_id: int, start_index: int, end_index: int = None, inherit_from_before: bool = True) -> dict`
-Insert one or more rows (zero-based indexes).
+Insert one or more rows (Indexes are zero-based and inclusive [start_index, end_index]).
 
 ```python
 req = ApiRequest.insert_rows(sheet_id=0, start_index=5, end_index=9)
 ```
 
 ### `insert_columns(sheet_id: int, start_index: int, end_index: int = None, inherit_from_before: bool = True) -> dict`
-Insert columns (zero-based indexes).
+Insert columns (Indexes are zero-based and inclusive [start_index, end_index]).
 
 ```python
 req = ApiRequest.insert_columns(sheet_id=0, start_index=2, end_index=3)
 ```
 
+### `delete_rows(sheet_id: int, start_index: int, end_index: int = None) -> dict`
+Delete one or more rows (Indexes are zero-based and inclusive [start_index, end_index]).
+
+```python
+req = ApiRequest.delete_rows(sheet_id=0, start_index=5, end_index=9)
+```
+
+### `delete_columns(sheet_id: int, start_index: int, end_index: int = None) -> dict`
+Delete columns (Indexes are zero-based and inclusive [start_index, end_index]).
+
+```python
+req = ApiRequest.delete_columns(sheet_id=0, start_index=2, end_index=3)
+```
+
 ### `clear_columns(sheet_id: int, rows_count: int, start_index: int, end_index: int = None) -> dict`
-Clear values and formatting in one or more columns.
+Clear values and formatting in one or more columns (Indexes are zero-based and inclusive [start_index, end_index]).
 
 ```python
 req = ApiRequest.clear_columns(sheet_id=0, rows_count=500, start_index=4, end_index=5)
