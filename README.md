@@ -65,7 +65,7 @@ spreadsheet_id, url = GoogleSheets.create_spreadsheet(
 )
 ```
 
-### `update_spreadsheet(spreadsheet_id: str, api_requests: list[dict], service: 'Resource') -> None`
+### `update_spreadsheet(spreadsheet_id: str, api_requests: list[dict], *, service: 'Resource') -> None`
 Execute a `batchUpdate` with one or more request objects.
 
 ```python
@@ -77,7 +77,7 @@ requests = [
 GoogleSheets.update_spreadsheet(spreadsheet_id, requests, service)
 ```
 
-### `copy_sheet(source_spreadsheet_id: str, source_sheet_id: str, destination_spreadsheet_id: str, service: 'Resource') -> SheetProperties`
+### `copy_sheet(source_spreadsheet_id: str, source_sheet_id: str, destination_spreadsheet_id: str, *, service: 'Resource') -> SheetProperties`
 Copy a sheet from one spreadsheet into another.
 
 ```python
@@ -97,19 +97,39 @@ spreadsheet = GoogleSheets.get_spreadsheet(spreadsheet_id, service)
 print([sheet.properties.title for sheet in spreadsheet.sheets])
 ```
 
-### `get_spreadsheet_range_values(spreadsheet_id: str, sheets: list[str | int], ranges: list[list[str]], service: 'Resource') -> list[list[SimpleType] | list[list[SimpleType]]]`
-Read values from multiple ranges across one or more sheets.
+### `get_spreadsheet_range_values(spreadsheet_id: str, sheets: list[str | int] | str | int, ranges: list[list[str]] | list[str] | str, *, by_columns: bool = False, service: 'Resource') -> list[list[RangeData]] | None:`
+Reads values from multiple ranges across multiple sheets. Returns a matrix of values (RangeData - list[list[SimpleType]]) for each range of each sheet. Returns None if an error occurs.
+
+Code from this example returns one range from sheet with id `1601337967` and three ranges from sheet `Summary` (assuming that these sheets exist in the spreadsheet). You can mix and match sheet names and ids as needed.
 
 ```python
 values = GoogleSheets.get_spreadsheet_range_values(
-    spreadsheet_id=spreadsheet_id,
-    sheets=[0, 'Summary'],
-    ranges=[['A2:C8'], ['B2:B12']],
-    service=service,
+    spreadsheet_id=SPREADSHEET_ID,
+    sheets=[1601337967, 'Summary'],
+    ranges=[['A2:C100'], ['A1:E10', 'F1:F10', 'H1']],
+    service=service
 )
-print(values)
 ```
 
+Next two examples return the same data (assuming that sheet `Sheet1` exists and has id `0`). With `by_columns=True` the values are grouped by columns instead of rows.
+```python
+values = GoogleSheets.get_spreadsheet_range_values(
+    SPREADSHEET_ID,
+    sheets='Sheet1',
+    ranges=['A1:E5'],
+    by_columns=True,
+    service=service
+)
+```
+```python
+values = GoogleSheets.get_spreadsheet_range_values(
+    SPREADSHEET_ID,
+    sheets=0,
+    ranges='A1:E5',
+    by_columns=True,
+    service=service
+)
+```
 ---
 
 ## `ApiRequest` methods for `batchUpdate`
@@ -138,7 +158,7 @@ req = ApiRequest.update_cells(
 ---
 ### Conditional formatting
 
-### `add_boolean_format_rule(*, sheet_id: int, ranges: list[str], condition_type: ConditionType, condition_values: list[ConditionValue] = None, cell_format: CellFormat) -> dict`
+### `add_boolean_format_rule(sheet_id: int, ranges: list[str], condition_type: ConditionType, *, condition_values: list[ConditionValue] = None, cell_format: CellFormat) -> dict`
 Add a rule (for example, highlight values greater than `100`).
 
 ```python
@@ -156,7 +176,7 @@ req = ApiRequest.add_boolean_format_rule(
 )
 ```
 
-### `GradientRule.add(*, sheet_id: int, ranges: list[str], interpolation_points: tuple[IPTypeAndValue, IPTypeAndValue] | tuple[IPTypeAndValue, IPTypeAndValue, IPTypeAndValue], interpolation_point_colors: tuple[ColorStyle, ColorStyle] | tuple[ColorStyle, ColorStyle, ColorStyle]) -> dict`
+### `GradientRule.add(sheet_id: int, *, ranges: list[str], interpolation_points: tuple[IPTypeAndValue, IPTypeAndValue] | tuple[IPTypeAndValue, IPTypeAndValue, IPTypeAndValue], interpolation_point_colors: tuple[ColorStyle, ColorStyle] | tuple[ColorStyle, ColorStyle, ColorStyle]) -> dict`
 Add a custom color scale with 2 or 3 interpolation points.
 
 ```python
@@ -178,7 +198,7 @@ req = ApiRequest.GradientRule.add(
 )
 ```
 
-### `GradientRule.add_preset(*, sheet_id: int, ranges: list[str], preset: Preset) -> dict`
+### `GradientRule.add_preset(sheet_id: int, ranges: list[str], preset: Preset) -> dict`
 Add a gradient rule from a built-in preset.
 
 ```python
@@ -189,14 +209,14 @@ req = ApiRequest.GradientRule.add_preset(
 )
 ```
 
-### `delete_conditional_format_rule(*, sheet_id: int, index: int) -> dict`
+### `delete_conditional_format_rule(sheet_id: int, *, index: int) -> dict`
 Delete a conditional format rule by index.
 
 ```python
 req = ApiRequest.delete_conditional_format_rule(sheet_id=0, index=0)
 ```
 
-### `update_conditional_format_rule(*, sheet_id: int, index: int, rule: ConditionalFormatRule) -> dict`
+### `update_conditional_format_rule(sheet_id: int, *, index: int, rule: ConditionalFormatRule) -> dict`
 Replace an existing conditional format rule by index.
 
 ```python
@@ -284,7 +304,7 @@ Delete a sheet.
 req = ApiRequest.delete_sheet(sheet_id=3)
 ```
 
-### `add_sheet(*, sheet_id: int = None, title: str = None, index: int = None, hidden: bool = None, row_count: int = None, column_count: int = None, frozen_row_count: int = None, frozen_column_count: int = None, hide_grid_lines: bool = None) -> dict`
+### `add_sheet(sheet_id: int = None, *, title: str = None, index: int = None, hidden: bool = None, row_count: int = None, column_count: int = None, frozen_row_count: int = None, frozen_column_count: int = None, hide_grid_lines: bool = None) -> dict`
 Create a new sheet with optional properties.
 
 ```python
@@ -306,7 +326,7 @@ Merge cells in a range.
 req = ApiRequest.merge_cells(sheet_id=0, range_='A1:C1')
 ```
 
-### `unmerge_cells(sheet_id: int, range_: str = None, start_row: int = None, end_row: int = None, start_column: int | str = None, end_column: int | str = None) -> dict`
+### `unmerge_cells(sheet_id: int, *, range_: str = None, start_row: int = None, end_row: int = None, start_column: int | str = None, end_column: int | str = None) -> dict`
 Unmerge cells in a range (or by explicit indexes).
 
 ```python
@@ -323,14 +343,14 @@ req = ApiRequest.freeze(sheet_id=0, rows=1, columns=1)
 ---
 ### Rows and columns
 
-### `insert_rows(sheet_id: int, start_index: int, end_index: int = None, inherit_from_before: bool = True) -> dict`
+### `insert_rows(sheet_id: int, start_index: int, end_index: int = None, *, inherit_from_before: bool = True) -> dict`
 Insert one or more rows (Indexes are zero-based and inclusive [start_index, end_index]).
 
 ```python
 req = ApiRequest.insert_rows(sheet_id=0, start_index=5, end_index=9)
 ```
 
-### `insert_columns(sheet_id: int, start_index: int, end_index: int = None, inherit_from_before: bool = True) -> dict`
+### `insert_columns(sheet_id: int, start_index: int, end_index: int = None, *, inherit_from_before: bool = True) -> dict`
 Insert columns (Indexes are zero-based and inclusive [start_index, end_index]).
 
 ```python

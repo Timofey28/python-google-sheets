@@ -4,6 +4,18 @@ from pydantic import BaseModel, Field, model_validator
 
 
 SimpleType = str | int | float | bool
+RangeData = list[list[SimpleType]]
+
+
+class ValueRenderOption(StrEnum):
+    FORMATTED_VALUE = 'FORMATTED_VALUE'  # Calculated & formatted according to the cell's formatting. DEFAULT value.
+    UNFORMATTED_VALUE = 'UNFORMATTED_VALUE'  # Calculated, not formatted (e.g. 123.45 instead of $123.45).
+    FORMULA = 'FORMULA'  # The formula as entered in the cell, e.g. '=SUM(A1:B1)'. If the cell contains a formula, this field will start with an '=' sign.
+
+
+class DateTimeRenderOption(StrEnum):
+    SERIAL_NUMBER = 'SERIAL_NUMBER'  # A number, where 1 corresponds to December 30, 1899. DEFAULT value.
+    FORMATTED_STRING = 'FORMATTED_STRING'  # A string, formatted according to the cell's formatting.
 
 
 class ThemeColorType(StrEnum):

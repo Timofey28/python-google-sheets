@@ -112,10 +112,10 @@ class ApiRequest:
 
     @staticmethod
     def add_boolean_format_rule(
-            *,
             sheet_id: int,
             ranges: list[str],
             condition_type: ConditionType,
+            *,
             condition_values: list[ConditionValue] = None,
             cell_format: CellFormat,
     ) -> dict:
@@ -143,8 +143,8 @@ class ApiRequest:
 
         @staticmethod
         def add(
-                *,
                 sheet_id: int,
+                *,
                 ranges: list[str],
                 interpolation_points: tuple[IPTypeAndValue, IPTypeAndValue] | tuple[IPTypeAndValue, IPTypeAndValue, IPTypeAndValue],
                 interpolation_point_colors: tuple[ColorStyle, ColorStyle] | tuple[ColorStyle, ColorStyle, ColorStyle],
@@ -210,10 +210,11 @@ class ApiRequest:
             RED_YELLOW_GREEN_PERCENT = 'RED_YELLOW_GREEN_PERCENT'
 
         @staticmethod
-        def add_preset(*, sheet_id: int, ranges: list[str], preset: Preset) -> dict:
+        def add_preset(sheet_id: int, ranges: list[str], preset: Preset) -> dict:
             grid_ranges = [GridRange(sheet_id=sheet_id, **ApiRequest._split_excel_range(range_, return_as_dict=True)) for range_ in ranges]
             AGP = ApiRequest.GradientRule.Preset
 
+            # Two interpolation points presets
             if preset in (AGP.WHITE_GREEN, AGP.WHITE_YELLOW, AGP.WHITE_RED, AGP.GREEN_WHITE, AGP.YELLOW_WHITE, AGP.RED_WHITE):
                 if preset == AGP.WHITE_YELLOW:
                     minpoint_color_style, maxpoint_color_style = Color_.Basic.WHITE, Color_.ConditionalFormatting.YELLOW
@@ -242,7 +243,7 @@ class ApiRequest:
                     )
                 )).dict()
 
-            else:  # three interpolation points
+            else:  # Three interpolation points presets
                 if preset in (AGP.RED_WHITE_GREEN_PERCENTILE, AGP.RED_WHITE_GREEN_PERCENT):
                     minpoint_cs, midpoint_cs, maxpoint_cs = Color_.ConditionalFormatting.RED, Color_.Basic.WHITE, Color_.ConditionalFormatting.GREEN
                     midpoint_type = InterpolationPointType.PERCENTILE if preset == AGP.RED_WHITE_GREEN_PERCENTILE else InterpolationPointType.PERCENT
@@ -276,11 +277,11 @@ class ApiRequest:
                 )).dict()
 
     @staticmethod
-    def delete_conditional_format_rule(*, sheet_id: int, index: int) -> dict:
+    def delete_conditional_format_rule(sheet_id: int, *, index: int) -> dict:
         return DeleteConditionalFormatRule(sheet_id=sheet_id, index=index).dict()
 
     @staticmethod
-    def update_conditional_format_rule(*, sheet_id: int, index: int, rule: ConditionalFormatRule) -> dict:
+    def update_conditional_format_rule(sheet_id: int, *, index: int, rule: ConditionalFormatRule) -> dict:
         return UpdateConditionalFormatRule(sheet_id=sheet_id, index=index, rule=rule).dict()
 
     @staticmethod
@@ -341,6 +342,7 @@ class ApiRequest:
     @staticmethod
     def unmerge_cells(
             sheet_id: int,
+            *,
             range_: str = None,
             start_row: int = None,
             end_row: int = None,
@@ -377,7 +379,7 @@ class ApiRequest:
         ).dict()
 
     @staticmethod
-    def insert_rows(sheet_id: int, start_index: int, end_index: int = None, inherit_from_before: bool = True) -> dict:
+    def insert_rows(sheet_id: int, start_index: int, end_index: int = None, *, inherit_from_before: bool = True) -> dict:
         """
         Indexes are zero-based and inclusive [start_index, end_index]. If end_index is not specified, then a single
         row will be inserted at start_index.
@@ -394,7 +396,7 @@ class ApiRequest:
         ).dict()
 
     @staticmethod
-    def insert_columns(sheet_id: int, start_index: int, end_index: int = None, inherit_from_before: bool = True) -> dict:
+    def insert_columns(sheet_id: int, start_index: int, end_index: int = None, *, inherit_from_before: bool = True) -> dict:
         """
         Indexes are zero-based and inclusive [start_index, end_index]. If end_index is not specified, then a single
         column will be inserted at start_index.
@@ -549,8 +551,8 @@ class ApiRequest:
 
     @staticmethod
     def add_sheet(
-            *,
             sheet_id: int = None,
+            *,
             title: str = None,
             index: int = None,
             hidden: bool = None,
@@ -575,7 +577,7 @@ class ApiRequest:
         )).dict()
 
     @staticmethod
-    def _split_excel_range(range_: str, return_as_dict: bool = False) -> tuple[int, int, int, int] | dict[str, int]:
+    def _split_excel_range(range_: str, *, return_as_dict: bool = False) -> tuple[int, int, int, int] | dict[str, int]:
         if ':' in range_:
             match = re.match(r'([A-Z]+)(\d+):([A-Z]+)(\d+)$', range_)
             if not match:

@@ -4,7 +4,7 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from .spreadsheet_requests import Spreadsheet, SheetProperties, SimpleType
+from .spreadsheet_requests import Spreadsheet, SheetProperties, RangeData, Dimension, ValueRenderOption, DateTimeRenderOption
 
 if TYPE_CHECKING:
     from googleapiclient.discovery import Resource  # noqa
@@ -85,7 +85,7 @@ class GoogleSheets:
         return spreadsheet_id, f'https://docs.google.com/spreadsheets/d/{spreadsheet_id}'
 
     @staticmethod
-    def update_spreadsheet(spreadsheet_id: str, api_requests: list[dict], service: 'Resource') -> None:
+    def update_spreadsheet(spreadsheet_id: str, api_requests: list[dict], *, service: 'Resource') -> None:
         """
         Updates Google Sheet with the specified API requests.
 
@@ -100,7 +100,7 @@ class GoogleSheets:
             raise e
 
     @staticmethod
-    def copy_sheet(source_spreadsheet_id: str, source_sheet_id: str, destination_spreadsheet_id: str, service: 'Resource') -> SheetProperties:
+    def copy_sheet(source_spreadsheet_id: str, source_sheet_id: str, destination_spreadsheet_id: str, *, service: 'Resource') -> SheetProperties:
         request = service.spreadsheets().sheets().copyTo(
             spreadsheetId=source_spreadsheet_id,
             sheetId=source_sheet_id,
@@ -118,63 +118,75 @@ class GoogleSheets:
     @staticmethod
     def get_spreadsheet_range_values(
             spreadsheet_id: str,
-            sheets: list[str | int],
-            ranges: list[list[str]],
+            sheets: list[str | int] | str | int,
+            ranges: list[list[str]] | list[str] | str,
+            *,
+            by_columns: bool = False,
             service: 'Resource'
-    ) -> list[list[SimpleType] | list[list[SimpleType]]]:
+    ) -> list[list[RangeData]] | None:
         """
         Reads values from the specified ranges of the table.
         IMPORTANT: If the last cells in the range are empty, they will be omitted. If all cells are empty, an empty
                    list will be returned for that range. However, leading empty cells are preserved and will appear in
-                   the result
+                   the result.
 
         Args:
-            spreadsheet_id (str): ID of the table
-            sheets (list[str | int]): Name or ID of the sheets to read from
-            ranges (list[list[str]]): List of ranges from each sheet to read in A1 notation
-            service (googleapiclient.discovery.Resource): Google Sheets service object
+            spreadsheet_id (str): ID of the table.
+            sheets (list[str | int] | str | int): Name or ID of the sheet(s).
+            ranges (list[list[str]] | list[str] | str): Single range or list of ranges from each sheet in A1 notation.
+            by_columns (bool, optional): If True, returns data organized by columns instead of rows. Defaults to False.
+            service (googleapiclient.discovery.Resource): Google Sheets service object.
 
         Returns:
-            list[list[SimpleType] | list[list[SimpleType]]]: List of values from the specified ranges. Each range
-            corresponds to an element in the list. If the range is a single row or a single column, a list of values
-            is returned Otherwise, a list of lists of values is returned.
+            list[list[RangeData]] | None: For each range of each sheet, returns a matrix of values (RangeData - list[list[SimpleType]]). Returns None if an error occurs.
         """
-        assert len(sheets) == len(ranges), 'sheets and ranges must have the same length'
+        assert \
+        (  # sheets: list[str | int], ranges: list[list[str]]
+            isinstance(sheets, list) and not isinstance(sheets[0], list) and
+            isinstance(ranges, list) and isinstance(ranges[0], list) and not isinstance(ranges[0][0], list) and
+            len(sheets) == len(ranges)
+        ) or (  # sheets: str | int, ranges: list[str] | str
+            isinstance(sheets, (str, int)) and
+            (isinstance(ranges, list) and not isinstance(ranges[0], list) or isinstance(ranges, str))
+        ), 'sheets and ranges must be either list[str | int] and list[list[str]] respectively and same size, or str | int and list[str] | str respectively'
+
+        # Normalize sheets and ranges to list[str | int] and list[list[str]] respectively
+        if isinstance(ranges, str):
+            ranges = [ranges]
+        if isinstance(sheets, str) or isinstance(sheets, int):
+            sheets = [sheets]
+            ranges = [ranges]
 
         ranges_processed = []
+        ss = None
         if any(isinstance(sheet, int) for sheet in sheets):
             ss = GoogleSheets.get_spreadsheet(spreadsheet_id, service)
-            for i in range(len(sheets)):
-                if isinstance(sheets[i], int):
-                    try:
-                        sheets[i] = next(sht.properties.title for sht in ss.sheets if sht.properties.sheet_id == sheets[i])
-                    except StopIteration:
-                        return [[]]
-                ranges_processed.extend([f'{sheets[i]}!{range_}' for range_ in ranges[i]])
+        for sheet_id_or_name, sheet_ranges in zip(sheets, ranges):
+            if isinstance(sheet_id_or_name, int):
+                try:
+                    sheet_name = next(sht.properties.title for sht in ss.sheets if sht.properties.sheet_id == sheet_id_or_name)
+                except StopIteration:
+                    return None
+            else:
+                sheet_name = sheet_id_or_name
+            ranges_processed.extend([f'{sheet_name}!{range_}' for range_ in sheet_ranges])
 
         try:
             response = service.spreadsheets().values().batchGet(
                 spreadsheetId=spreadsheet_id,
                 ranges=ranges_processed,
-                valueRenderOption='UNFORMATTED_VALUE',
-                dateTimeRenderOption='FORMATTED_STRING'
+                majorDimension=Dimension.COLUMNS if by_columns else Dimension.ROWS,
+                valueRenderOption=ValueRenderOption.UNFORMATTED_VALUE,
+                dateTimeRenderOption=DateTimeRenderOption.FORMATTED_STRING
             ).execute(num_retries=5)
-        except HttpError as e:
-            raise e
+        except HttpError:
+            return None
         else:
             result = []
-            for value_range in response['valueRanges']:
-                values = value_range.get('values', [])
-                if not values:
-                    result.append([])
-                    continue
-
-                if len(values) == 1:  # If range is a single row
-                    result.append(values[0])
-                else:
-                    if max([len(row) for row in values]) <= 1:  # If range is a single column
-                        result.append([(row[0] if row else '') for row in values])
-                    else:
-                        result.append(values)
-
+            value_ranges = iter(response.get('valueRanges', []))
+            for sheet_no in range(len(ranges)):
+                sheet_ranges = []
+                for range_no in range(len(ranges[sheet_no])):
+                    sheet_ranges.append(next(value_ranges).get('values', []))
+                result.append(sheet_ranges)
             return result

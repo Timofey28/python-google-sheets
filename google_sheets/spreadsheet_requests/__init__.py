@@ -59,9 +59,12 @@ from .spreadsheet import (
 )
 
 from .general_models import (
+    ValueRenderOption,
+    DateTimeRenderOption,
     Color,
     ColorStyle,
     GridRange,
     FieldMask,
     SimpleType,
+    RangeData,
 )
