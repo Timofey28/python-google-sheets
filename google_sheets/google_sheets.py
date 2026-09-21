@@ -169,7 +169,10 @@ class GoogleSheets:
                     return None
             else:
                 sheet_name = sheet_id_or_name
-            ranges_processed.extend([f'{sheet_name}!{range_}' for range_ in sheet_ranges])
+            ranges_processed.extend([
+                f"'{sheet_name}'!{f'{range_}ZZZ' if range_.endswith(':') else range_}".rstrip('!')
+                for range_ in sheet_ranges
+            ])
 
         try:
             response = service.spreadsheets().values().batchGet(
