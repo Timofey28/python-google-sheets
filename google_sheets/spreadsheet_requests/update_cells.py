@@ -186,6 +186,13 @@ class CellFormat(BaseModel):
             text_rotation=other.text_rotation or self.text_rotation,
         )
 
+    def __mul__(self, n):
+        if not isinstance(n, int) or n < 0:
+            return NotImplemented
+        return [self.model_copy(deep=True) for _ in range(n)]
+
+    __rmul__ = __mul__
+
     class Config:
         populate_by_name = True
 
