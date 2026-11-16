@@ -70,8 +70,13 @@ class GridRange(BaseModel):
 
 
 class FieldMask:
-    TITLE = 'title'
-    PIXEL_SIZE = 'pixelSize'
+    class SheetProperties:
+        TITLE = 'title'
+        HIDDEN = 'hidden'
+
+    class DimensionProperties:
+        HIDDEN_BY_USER = 'hiddenByUser'
+        PIXEL_SIZE = 'pixelSize'
 
     class GridProperties:
         ALL = 'gridProperties'
@@ -92,3 +97,7 @@ class FieldMask:
         URL = 'spreadsheetUrl'
         PROPERTIES = 'properties'
         SHEETS = 'sheets'
+
+    class DimensionGroup:
+        DEPTH = 'depth'
+        COLLAPSED = 'collapsed'

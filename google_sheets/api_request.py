@@ -33,8 +33,10 @@ from .spreadsheet_requests import (
     UpdateDimensionProperties,
     AddDimensionGroup,
     DeleteDimensionGroup,
+    UpdateDimensionGroup,
     DimensionProperties,
     DimensionRange,
+    DimensionGroup,
     Dimension,
 
     # update_cells
@@ -291,7 +293,7 @@ class ApiRequest:
                 sheet_id=sheet_id,
                 title=title
             ),
-            fields=FieldMask.TITLE
+            fields=FieldMask.SheetProperties.TITLE
         ).dict()
 
     @staticmethod
@@ -302,6 +304,26 @@ class ApiRequest:
                 grid_properties=GridProperties(hide_grid_lines=True)
             ),
             fields=FieldMask.GridProperties.HIDE_GRID_LINES
+        ).dict()
+
+    @staticmethod
+    def hide_sheet(sheet_id: int) -> dict:
+        return UpdateSheetProperties(
+            properties=SheetProperties(
+                sheet_id=sheet_id,
+                hidden=True
+            ),
+            fields=FieldMask.SheetProperties.HIDDEN
+        ).dict()
+
+    @staticmethod
+    def unhide_sheet(sheet_id: int) -> dict:
+        return UpdateSheetProperties(
+            properties=SheetProperties(
+                sheet_id=sheet_id,
+                hidden=False
+            ),
+            fields=FieldMask.SheetProperties.HIDDEN
         ).dict()
 
     @staticmethod
@@ -381,8 +403,8 @@ class ApiRequest:
     @staticmethod
     def insert_rows(sheet_id: int, start_index: int, end_index: int = None, *, inherit_from_before: bool = True) -> dict:
         """
-        Indexes are zero-based and inclusive [start_index, end_index]. If end_index is not specified, then a single
-        row will be inserted at start_index.
+        Indexes are zero-based and inclusive [start_index, end_index].
+        If end_index is not specified, then a single row will be inserted at start_index.
         """
         end_index = end_index or start_index
         return InsertDimension(
@@ -398,8 +420,8 @@ class ApiRequest:
     @staticmethod
     def insert_columns(sheet_id: int, start_index: int, end_index: int = None, *, inherit_from_before: bool = True) -> dict:
         """
-        Indexes are zero-based and inclusive [start_index, end_index]. If end_index is not specified, then a single
-        column will be inserted at start_index.
+        Indexes are zero-based and inclusive [start_index, end_index].
+        If end_index is not specified, then a single column will be inserted at start_index.
         """
         end_index = end_index or start_index
         return InsertDimension(
@@ -415,8 +437,8 @@ class ApiRequest:
     @staticmethod
     def delete_rows(sheet_id: int, start_index: int, end_index: int = None):
         """
-        Indexes are zero-based and inclusive [start_index, end_index]. If end_index is not specified, then a single
-        row at start_index will be deleted.
+        Indexes are zero-based and inclusive [start_index, end_index].
+        If end_index is not specified, then a single row at start_index will be deleted.
         """
         end_index = end_index or start_index
         return DeleteDimension(
@@ -431,8 +453,8 @@ class ApiRequest:
     @staticmethod
     def delete_columns(sheet_id: int, start_index: int, end_index: int = None):
         """
-        Indexes are zero-based and inclusive [start_index, end_index]. If end_index is not specified, then a single
-        column at start_index will be deleted.
+        Indexes are zero-based and inclusive [start_index, end_index].
+        If end_index is not specified, then a single column at start_index will be deleted.
         """
         end_index = end_index or start_index
         return DeleteDimension(
@@ -448,6 +470,7 @@ class ApiRequest:
     def clear_columns(sheet_id: int, rows_count: int, start_index: int, end_index: int = None) -> dict:
         """
         Delete data and formatting in columns. Indexes are zero-based and inclusive [start_index, end_index].
+        If end_index is not specified, then a single column at start_index will be cleared.
         """
         end_index = end_index or start_index
         return UpdateCells(
@@ -477,7 +500,7 @@ class ApiRequest:
             properties=DimensionProperties(
                 pixel_size=width
             ),
-            fields=FieldMask.PIXEL_SIZE
+            fields=FieldMask.DimensionProperties.PIXEL_SIZE
         ).dict()
 
     @staticmethod
@@ -492,7 +515,87 @@ class ApiRequest:
             properties=DimensionProperties(
                 pixel_size=height
             ),
-            fields=FieldMask.PIXEL_SIZE
+            fields=FieldMask.DimensionProperties.PIXEL_SIZE
+        ).dict()
+
+    @staticmethod
+    def hide_columns(sheet_id: int, start_index: int, end_index: int = None) -> dict:
+        """
+        Indexes are zero-based and inclusive [start_index, end_index].
+        If end_index is not specified, then a single column at start_index will be hidden.
+        """
+        end_index = end_index or start_index
+        return UpdateDimensionProperties(
+            range=DimensionRange(
+                sheet_id=sheet_id,
+                dimension=Dimension.COLUMNS,
+                start_index=start_index,
+                end_index=end_index + 1
+            ),
+            properties=DimensionProperties(
+                hidden_by_user=True
+            ),
+            fields=FieldMask.DimensionProperties.HIDDEN_BY_USER
+        ).dict()
+
+    @staticmethod
+    def unhide_columns(sheet_id: int, start_index: int, end_index: int = None) -> dict:
+        """
+        Indexes are zero-based and inclusive [start_index, end_index].
+        If end_index is not specified, then a single column at start_index will be unhidden.
+        """
+        end_index = end_index or start_index
+        return UpdateDimensionProperties(
+            range=DimensionRange(
+                sheet_id=sheet_id,
+                dimension=Dimension.COLUMNS,
+                start_index=start_index,
+                end_index=end_index + 1
+            ),
+            properties=DimensionProperties(
+                hidden_by_user=False
+            ),
+            fields=FieldMask.DimensionProperties.HIDDEN_BY_USER
+        ).dict()
+
+    @staticmethod
+    def hide_rows(sheet_id: int, start_index: int, end_index: int = None) -> dict:
+        """
+        Indexes are zero-based and inclusive [start_index, end_index].
+        If end_index is not specified, then a single row at start_index will be hidden.
+        """
+        end_index = end_index or start_index
+        return UpdateDimensionProperties(
+            range=DimensionRange(
+                sheet_id=sheet_id,
+                dimension=Dimension.ROWS,
+                start_index=start_index,
+                end_index=end_index + 1
+            ),
+            properties=DimensionProperties(
+                hidden_by_user=True
+            ),
+            fields=FieldMask.DimensionProperties.HIDDEN_BY_USER
+        ).dict()
+
+    @staticmethod
+    def unhide_rows(sheet_id: int, start_index: int, end_index: int = None) -> dict:
+        """
+        Indexes are zero-based and inclusive [start_index, end_index].
+        If end_index is not specified, then a single row at start_index will be unhidden.
+        """
+        end_index = end_index or start_index
+        return UpdateDimensionProperties(
+            range=DimensionRange(
+                sheet_id=sheet_id,
+                dimension=Dimension.ROWS,
+                start_index=start_index,
+                end_index=end_index + 1
+            ),
+            properties=DimensionProperties(
+                hidden_by_user=False
+            ),
+            fields=FieldMask.DimensionProperties.HIDDEN_BY_USER
         ).dict()
 
     @staticmethod
@@ -505,7 +608,7 @@ class ApiRequest:
                 end_index=rows
             ),
             properties=DimensionProperties(pixel_size=21),
-            fields=FieldMask.PIXEL_SIZE
+            fields=FieldMask.DimensionProperties.PIXEL_SIZE
         ).dict(), UpdateDimensionProperties(
             range=DimensionRange(
                 sheet_id=sheet_id,
@@ -514,7 +617,7 @@ class ApiRequest:
                 end_index=columns
             ),
             properties=DimensionProperties(pixel_size=100),
-            fields=FieldMask.PIXEL_SIZE
+            fields=FieldMask.DimensionProperties.PIXEL_SIZE
         ).dict()
 
     @staticmethod
@@ -543,6 +646,25 @@ class ApiRequest:
                 start_index=start_index,
                 end_index=end_index + 1
             )
+        ).dict()
+
+    @staticmethod
+    def update_dimension_group(sheet_id: int, dimension: Dimension, start_index: int, end_index: int, *, collapsed: bool, depth: int = 1) -> dict:
+        """
+        Indexes are zero-based and inclusive [start_index, end_index].
+        """
+        return UpdateDimensionGroup(
+            dimension_group=DimensionGroup(
+                range=DimensionRange(
+                    sheet_id=sheet_id,
+                    dimension=dimension,
+                    start_index=start_index,
+                    end_index=end_index + 1
+                ),
+                depth=depth,
+                collapsed=collapsed
+            ),
+            fields=FieldMask.DimensionGroup.COLLAPSED
         ).dict()
 
     @staticmethod

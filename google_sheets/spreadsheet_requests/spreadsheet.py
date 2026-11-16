@@ -80,7 +80,7 @@ class DeleteSheet(BaseModel):
 
     def dict(self, *args, **kwargs):
         class_name = self.__class__.__name__[0].lower() + self.__class__.__name__[1:]
-        return {class_name: json.loads(super().json(*args, **kwargs, by_alias=True, exclude_none=True))}
+        return {class_name: json.loads(super().model_dump_json(*args, **kwargs, by_alias=True, exclude_none=True))}
 
 
 class AddSheet(BaseModel):
@@ -88,4 +88,4 @@ class AddSheet(BaseModel):
 
     def dict(self, *args, **kwargs):
         class_name = self.__class__.__name__[0].lower() + self.__class__.__name__[1:]
-        return {class_name: json.loads(super().json(*args, **kwargs, by_alias=True, exclude_none=True))}
+        return {class_name: json.loads(super().model_dump_json(*args, **kwargs, by_alias=True, exclude_none=True))}

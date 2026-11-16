@@ -28,8 +28,10 @@ from .dimension import (
     UpdateDimensionProperties,
     AddDimensionGroup,
     DeleteDimensionGroup,
+    UpdateDimensionGroup,
     DimensionProperties,
     DimensionRange,
+    DimensionGroup,
     Dimension,
 )
 from .update_cells import (

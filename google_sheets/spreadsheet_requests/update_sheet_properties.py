@@ -24,10 +24,10 @@ class GridProperties(BaseModel):
 
 
 class SheetProperties(BaseModel):
-    sheet_id: int | None = Field(None, alias='sheetId', ge=0)
+    sheet_id: int | None = Field(None, alias='sheetId', ge=0)  # cannot be changed once set
     title: str | None = None
     index: int | None = None
-    sheet_type: str | None = Field(None, alias='sheetType')  # Defaults to GRID
+    sheet_type: str | None = Field(None, alias='sheetType')  # Defaults to GRID, cannot be changed once set
     grid_properties: GridProperties | None = Field(None, alias='gridProperties')
     hidden: bool | None = None
     tab_color_style: ColorStyle | None = Field(None, alias='tabColorStyle')
@@ -44,4 +44,4 @@ class UpdateSheetProperties(BaseModel):
 
     def dict(self, *args, **kwargs):
         class_name = self.__class__.__name__[0].lower() + self.__class__.__name__[1:]
-        return {class_name: json.loads(super().json(*args, **kwargs, by_alias=True, exclude_none=True))}
+        return {class_name: json.loads(super().model_dump_json(*args, **kwargs, by_alias=True, exclude_none=True))}
