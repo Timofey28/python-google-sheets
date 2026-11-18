@@ -2,22 +2,24 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field, model_validator
 
-
 SimpleType = str | int | float | bool
 RangeData = list[list[SimpleType]]
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/ValueRenderOption
 class ValueRenderOption(StrEnum):
     FORMATTED_VALUE = 'FORMATTED_VALUE'  # Calculated & formatted according to the cell's formatting. DEFAULT value.
     UNFORMATTED_VALUE = 'UNFORMATTED_VALUE'  # Calculated, not formatted (e.g. 123.45 instead of $123.45).
     FORMULA = 'FORMULA'  # The formula as entered in the cell, e.g. '=SUM(A1:B1)'. If the cell contains a formula, this field will start with an '=' sign.
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/DateTimeRenderOption
 class DateTimeRenderOption(StrEnum):
     SERIAL_NUMBER = 'SERIAL_NUMBER'  # A number, where 1 corresponds to December 30, 1899. DEFAULT value.
     FORMATTED_STRING = 'FORMATTED_STRING'  # A string, formatted according to the cell's formatting.
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/other#themecolortype
 class ThemeColorType(StrEnum):
     TEXT = 'TEXT'
     BACKGROUND = 'BACKGROUND'
@@ -30,6 +32,7 @@ class ThemeColorType(StrEnum):
     LINK = 'LINK'
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/other#color
 class Color(BaseModel):
     red: float = Field(1, ge=0, le=1)
     green: float = Field(1, ge=0, le=1)
@@ -37,6 +40,7 @@ class Color(BaseModel):
     alpha: float = Field(1, ge=0, le=1)
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/other#colorstyle
 class ColorStyle(BaseModel):
     rgb_color: Color = Field(..., alias='rgbColor')
     theme_color: ThemeColorType = Field(None, alias='themeColor')
@@ -45,6 +49,7 @@ class ColorStyle(BaseModel):
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/other#gridrange
 class GridRange(BaseModel):
     """
     A range on a sheet. All indexes are zero-based. Indexes are half open, i.e. the start index is inclusive and the

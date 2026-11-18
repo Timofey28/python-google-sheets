@@ -651,7 +651,8 @@ class ApiRequest:
     @staticmethod
     def update_dimension_group(sheet_id: int, dimension: Dimension, start_index: int, end_index: int, *, collapsed: bool, depth: int = 1) -> dict:
         """
-        Indexes are zero-based and inclusive [start_index, end_index].
+        Indexes are zero-based and inclusive [start_index, end_index]. Most often used to collapse or expand a group of rows or columns.
+        The `depth` parameter is used to specify the level of grouping, with 1 being the outermost level.
         """
         return UpdateDimensionGroup(
             dimension_group=DimensionGroup(
@@ -683,6 +684,8 @@ class ApiRequest:
             frozen_row_count: int = None,
             frozen_column_count: int = None,
             hide_grid_lines: bool = None,
+            row_group_control_after: bool = True,  # row grouping control toggle is shown after the group
+            column_group_control_after: bool = True,  # column grouping control toggle is shown after the group
     ) -> dict:
         return AddSheet(properties=SheetProperties(
             sheet_id=sheet_id,
@@ -694,7 +697,9 @@ class ApiRequest:
                 column_count=column_count,
                 frozen_row_count=frozen_row_count,
                 frozen_column_count=frozen_column_count,
-                hide_grid_lines=hide_grid_lines
+                hide_grid_lines=hide_grid_lines,
+                row_group_control_after=row_group_control_after,
+                column_group_control_after=column_group_control_after
             )
         )).dict()
 

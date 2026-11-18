@@ -1,3 +1,10 @@
+"""
+This module contains the models for the following Google Sheets API requests:
+
+- AddSheet
+- DeleteSheet
+"""
+
 import json
 from enum import StrEnum
 
@@ -10,12 +17,14 @@ from .conditional_format_rule import ConditionalFormatRule
 from .general_models import GridRange
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets#recalculationinterval
 class RecalculationInterval(StrEnum):
     ON_CHANGE = 'ON_CHANGE'
     MINUTE = 'MINUTE'
     HOUR = 'HOUR'
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets#spreadsheetproperties
 class SpreadsheetProperties(BaseModel):
     title: str
     locale: str = 'ru_RU'
@@ -25,13 +34,14 @@ class SpreadsheetProperties(BaseModel):
     spreadsheet_theme: dict | None = Field(None, alias='spreadsheetTheme')
     import_functions_external_url_access_allowed: bool | None = Field(None, alias='importFunctionsExternalUrlAccessAllowed')
 
-    # Read-only
+    # Read-only fields
     default_format: dict | None = Field(None, alias='defaultFormat')
 
     class Config:
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/sheets#griddata
 class GridData(BaseModel):
     start_row: int | None = Field(None, alias='startRow')
     start_column: int | None = Field(None, alias='startColumn')
@@ -40,6 +50,7 @@ class GridData(BaseModel):
     column_metadata: list[DimensionProperties] | None = Field(None, alias='columnMetadata')
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/sheets#sheet
 class Sheet(BaseModel):
     properties: SheetProperties = None
     data: list[GridData] | None = None
@@ -59,6 +70,7 @@ class Sheet(BaseModel):
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets#resource:-spreadsheet
 class Spreadsheet(BaseModel):
     properties: SpreadsheetProperties | None = None
     sheets: list[Sheet] | None = None
@@ -66,7 +78,7 @@ class Spreadsheet(BaseModel):
     developer_metadata: list[dict] | None = Field(None, alias='developerMetadata')
     data_sources: list[dict] | None = Field(None, alias='dataSources')
 
-    # Read-only
+    # Read-only fields
     spreadsheet_id: str | None = Field(None, alias='spreadsheetId')
     spreadsheet_url: str | None = Field(None, alias='spreadsheetUrl')
     data_source_schedules: list[dict] | None = Field(None, alias='dataSourceSchedules')
@@ -75,16 +87,18 @@ class Spreadsheet(BaseModel):
         populate_by_name = True
 
 
-class DeleteSheet(BaseModel):
-    sheet_id: int = Field(..., serialization_alias='sheetId')
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#addsheetrequest
+class AddSheet(BaseModel):
+    properties: SheetProperties = None
 
     def dict(self, *args, **kwargs):
         class_name = self.__class__.__name__[0].lower() + self.__class__.__name__[1:]
         return {class_name: json.loads(super().model_dump_json(*args, **kwargs, by_alias=True, exclude_none=True))}
 
 
-class AddSheet(BaseModel):
-    properties: SheetProperties = None
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#deletesheetrequest
+class DeleteSheet(BaseModel):
+    sheet_id: int = Field(..., serialization_alias='sheetId')
 
     def dict(self, *args, **kwargs):
         class_name = self.__class__.__name__[0].lower() + self.__class__.__name__[1:]

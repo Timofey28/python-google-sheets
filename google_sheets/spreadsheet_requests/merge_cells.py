@@ -12,12 +12,14 @@ from pydantic import BaseModel, Field
 from .general_models import GridRange
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#mergetype
 class MergeType(StrEnum):
     MERGE_ALL = 'MERGE_ALL'
     MERGE_COLUMNS = 'MERGE_COLUMNS'
     MERGE_ROWS = 'MERGE_ROWS'
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#mergecellsrequest
 class MergeCells(BaseModel):
     range: GridRange
     merge_type: MergeType = Field(..., serialization_alias='mergeType')
@@ -27,6 +29,7 @@ class MergeCells(BaseModel):
         return {class_name: json.loads(super().model_dump_json(*args, **kwargs, by_alias=True, exclude_none=True))}
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#unmergecellsrequest
 class UnmergeCells(BaseModel):
     range: GridRange
 

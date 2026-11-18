@@ -15,11 +15,13 @@ from enum import StrEnum
 from pydantic import BaseModel, Field, model_validator
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/Dimension
 class Dimension(StrEnum):
     ROWS = 'ROWS'
     COLUMNS = 'COLUMNS'
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/DimensionRange
 class DimensionRange(BaseModel):
     sheet_id: int = Field(..., serialization_alias='sheetId', ge=0)
     dimension: Dimension
@@ -37,6 +39,7 @@ class DimensionRange(BaseModel):
         return values
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/sheets#dimensiongroup
 class DimensionGroup(BaseModel):
     range: DimensionRange
     depth: int = Field(..., ge=0)
@@ -46,19 +49,21 @@ class DimensionGroup(BaseModel):
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/sheets#dimensionproperties
 class DimensionProperties(BaseModel):
     hidden_by_user: bool = Field(None, alias='hiddenByUser')
     pixel_size: int = Field(None, alias='pixelSize')
     developer_metadata: dict = Field(None, alias='developerMetadata')
     data_source_column_reference: dict = Field(None, alias='dataSourceColumnReference')
 
-    # Read-only
+    # Read-only fields
     hidden_by_filter: bool = Field(None, alias='hiddenByFilter')
 
     class Config:
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#insertdimensionrequest
 class InsertDimension(BaseModel):
     range: DimensionRange
     inherit_from_before: bool = Field(..., serialization_alias='inheritFromBefore')
@@ -68,6 +73,7 @@ class InsertDimension(BaseModel):
         return {class_name: json.loads(super().model_dump_json(*args, **kwargs, by_alias=True, exclude_none=True))}
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#deletedimensionrequest
 class DeleteDimension(BaseModel):
     range: DimensionRange
 
@@ -76,6 +82,7 @@ class DeleteDimension(BaseModel):
         return {class_name: json.loads(super().model_dump_json(*args, **kwargs, by_alias=True, exclude_none=True))}
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#updatedimensionpropertiesrequest
 class UpdateDimensionProperties(BaseModel):
     range: DimensionRange
     properties: DimensionProperties
@@ -86,6 +93,7 @@ class UpdateDimensionProperties(BaseModel):
         return {class_name: json.loads(super().model_dump_json(*args, **kwargs, by_alias=True, exclude_none=True))}
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#adddimensiongrouprequest
 class AddDimensionGroup(BaseModel):
     range: DimensionRange
 
@@ -94,6 +102,7 @@ class AddDimensionGroup(BaseModel):
         return {class_name: json.loads(super().model_dump_json(*args, **kwargs, by_alias=True, exclude_none=True))}
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#deletedimensiongrouprequest
 class DeleteDimensionGroup(BaseModel):
     range: DimensionRange
 
@@ -102,6 +111,7 @@ class DeleteDimensionGroup(BaseModel):
         return {class_name: json.loads(super().model_dump_json(*args, **kwargs, by_alias=True, exclude_none=True))}
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#updatedimensiongrouprequest
 class UpdateDimensionGroup(BaseModel):
     dimension_group: DimensionGroup = Field(..., serialization_alias='dimensionGroup')
     fields: str

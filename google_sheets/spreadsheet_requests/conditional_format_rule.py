@@ -3,6 +3,7 @@ This module contains the models for the following Google Sheets API requests:
 
 - AddConditionalFormatRule
 - DeleteConditionalFormatRule
+- UpdateConditionalFormatRule
 """
 
 import json
@@ -14,6 +15,7 @@ from .general_models import ColorStyle, GridRange, SimpleType
 from .update_cells import CellFormat
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/sheets#interpolationpointtype
 class InterpolationPointType(StrEnum):
     MIN = 'MIN'
     MAX = 'MAX'
@@ -22,6 +24,7 @@ class InterpolationPointType(StrEnum):
     PERCENTILE = 'PERCENTILE'
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/sheets#interpolationpoint
 class InterpolationPoint(BaseModel):
     color_style: ColorStyle = Field(..., alias='colorStyle')
     type: InterpolationPointType
@@ -38,6 +41,7 @@ class InterpolationPoint(BaseModel):
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/other#relativedate
 class RelativeDate(StrEnum):
     PAST_YEAR = 'PAST_YEAR'  # One year before today
     PAST_MONTH = 'PAST_MONTH'  # One month before today
@@ -47,6 +51,7 @@ class RelativeDate(StrEnum):
     TOMORROW = 'TOMORROW'
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/other#conditionvalue
 class ConditionValue(BaseModel):
     """ Union field, exactly one must be set """
     relative_date: RelativeDate | None = Field(None, alias='relativeDate')
@@ -63,6 +68,7 @@ class ConditionValue(BaseModel):
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/other#conditiontype
 class ConditionType(StrEnum):
     NUMBER_GREATER = 'NUMBER_GREATER'  # Requires ONE ConditionValue
     NUMBER_GREATER_THAN_EQ = 'NUMBER_GREATER_THAN_EQ'  # Requires ONE ConditionValue
@@ -98,22 +104,26 @@ class ConditionType(StrEnum):
     FILTER_EXPRESSION = 'FILTER_EXPRESSION'  # Requires ONE ConditionValue
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/other#booleancondition
 class BooleanCondition(BaseModel):
     type: ConditionType
     values: list[ConditionValue] = Field(default_factory=list)
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/sheets#booleanrule
 class BooleanRule(BaseModel):
     condition: BooleanCondition
     format: CellFormat
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/sheets#gradientrule
 class GradientRule(BaseModel):
     minpoint: InterpolationPoint
     midpoint: InterpolationPoint | None = None
     maxpoint: InterpolationPoint
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/sheets#conditionalformatrule
 class ConditionalFormatRule(BaseModel):
     ranges: list[GridRange]
 
@@ -134,6 +144,7 @@ class ConditionalFormatRule(BaseModel):
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#addconditionalformatrulerequest
 class AddConditionalFormatRule(BaseModel):
     rule: ConditionalFormatRule
     index: int = 0
@@ -143,6 +154,7 @@ class AddConditionalFormatRule(BaseModel):
         return {class_name: json.loads(super().model_dump_json(*args, **kwargs, by_alias=True, exclude_none=True))}
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#deleteconditionalformatrulerequest
 class DeleteConditionalFormatRule(BaseModel):
     index: int
     sheet_id: int
@@ -152,6 +164,7 @@ class DeleteConditionalFormatRule(BaseModel):
         return {class_name: json.loads(super().model_dump_json(*args, **kwargs, by_alias=True, exclude_none=True))}
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#updateconditionalformatrulerequest
 class UpdateConditionalFormatRule(BaseModel):
     index: int
     sheet_id: int = Field(..., serialization_alias='sheetId')

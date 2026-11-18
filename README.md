@@ -136,6 +136,7 @@ values = GoogleSheets.get_spreadsheet_range_values(
 
 Each method below returns a request `dict` that you can pass to `GoogleSheets.update_spreadsheet(...)`.
 
+---
 ### Cell updates
 
 ### `update_cells(sheet_id: int, range_: str, values: list[list[int | float | bool | str]] | list[int | float | bool | str] = None, cell_formats: list[list[CellFormat]] | list[CellFormat] = None) -> dict`
@@ -276,6 +277,30 @@ GoogleSheets.update_spreadsheet(SPREADSHEET_ID, api_requests=[req1, req2], servi
 
 ### Sheet-level operations
 
+### `add_sheet(sheet_id: int = None, *, title: str = None, index: int = None, hidden: bool = None, row_count: int = None, column_count: int = None, frozen_row_count: int = None, frozen_column_count: int = None, hide_grid_lines: bool = None, row_group_control_after: bool = True, column_group_control_after: bool = True) -> dict`
+Create a new sheet with optional properties.
+
+```python
+req = ApiRequest.add_sheet(
+    sheet_id=1,
+    index=0,
+    title='Archive',
+    hidden=False,
+    row_count=100,
+    column_count=8,
+    frozen_row_count=1,
+    frozen_column_count=1,
+    hide_grid_lines=True,
+)
+```
+
+### `delete_sheet(sheet_id: int) -> dict`
+Delete a sheet.
+
+```python
+req = ApiRequest.delete_sheet(sheet_id=3)
+```
+
 ### `update_sheet_title(sheet_id: int, title: str) -> dict`
 Rename a sheet.
 
@@ -297,24 +322,11 @@ Resize a sheet.
 req = ApiRequest.set_sheet_size(sheet_id=0, rows=200, columns=12)
 ```
 
-### `delete_sheet(sheet_id: int) -> dict`
-Delete a sheet.
+### `hide_sheet(sheet_id: int) -> dict`
+Hide a sheet.
 
-```python
-req = ApiRequest.delete_sheet(sheet_id=3)
-```
-
-### `add_sheet(sheet_id: int = None, *, title: str = None, index: int = None, hidden: bool = None, row_count: int = None, column_count: int = None, frozen_row_count: int = None, frozen_column_count: int = None, hide_grid_lines: bool = None) -> dict`
-Create a new sheet with optional properties.
-
-```python
-req = ApiRequest.add_sheet(
-    title='Archive',
-    row_count=100,
-    column_count=8,
-    hide_grid_lines=True,
-)
-```
+### `unhide_sheet(sheet_id: int) -> dict`
+Unhide a sheet.
 
 ---
 ### Merge and freeze
@@ -403,6 +415,18 @@ row_req, col_req = ApiRequest.set_standard_cell_dimensions(
 )
 ```
 
+### `hide_rows(sheet_id: int, start_index: int, end_index: int = None) -> dict`
+Hide one or more rows (Indexes are zero-based and inclusive [start_index, end_index]). If `end_index` is not provided, only the row at `start_index` will be hidden.
+
+### `hide_columns(sheet_id: int, start_index: int, end_index: int = None) -> dict`'
+Hide one or more columns (Indexes are zero-based and inclusive [start_index, end_index]). If `end_index` is not provided, only the column at `start_index` will be hidden.
+
+### `unhide_rows(sheet_id: int, start_index: int, end_index: int = None) -> dict`
+Unhide one or more rows (Indexes are zero-based and inclusive [start_index, end_index]). If `end_index` is not provided, only the row at `start_index` will be unhidden.
+
+### `unhide_columns(sheet_id: int, start_index: int, end_index: int = None) -> dict`
+Unhide one or more columns (Indexes are zero-based and inclusive [start_index, end_index]). If `end_index` is not provided, only the column at `start_index` will be unhidden.
+
 ### `add_dimension_group(sheet_id: int, dimension: Dimension, start_index: int, end_index: int) -> dict`
 Create an outline group for rows or columns.
 
@@ -428,6 +452,9 @@ req = ApiRequest.delete_dimension_group(
     end_index=30,
 )
 ```
+
+### `update_dimension_group(sheet_id: int, dimension: Dimension, start_index: int, end_index: int, *, collapsed: bool, depth: int = 1) -> dict`
+Collapse or expand a group of rows or columns. Indexes are zero-based and inclusive [start_index, end_index]. The `depth` parameter is used to specify the level of grouping, with 1 being the outermost level.
 
 ---
 

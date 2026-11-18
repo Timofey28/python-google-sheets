@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from .general_models import ColorStyle
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/sheets#GridProperties
 class GridProperties(BaseModel):
     row_count: int | None = Field(None, alias='rowCount', gt=0)
     column_count: int | None = Field(None, alias='columnCount', gt=0)
@@ -23,6 +24,7 @@ class GridProperties(BaseModel):
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/sheets#sheetproperties
 class SheetProperties(BaseModel):
     sheet_id: int | None = Field(None, alias='sheetId', ge=0)  # cannot be changed once set
     title: str | None = None
@@ -38,6 +40,7 @@ class SheetProperties(BaseModel):
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#updatesheetpropertiesrequest
 class UpdateSheetProperties(BaseModel):
     properties: SheetProperties
     fields: str

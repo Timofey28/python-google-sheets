@@ -1,5 +1,6 @@
 """
 This module contains models for the following Google Sheets API requests:
+
 - UpdateCells
 """
 
@@ -13,6 +14,7 @@ from pydantic import BaseModel, Field, model_validator
 from .general_models import GridRange, ColorStyle
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#numberformattype
 class NumberFormatType(StrEnum):
     TEXT = 'TEXT'
     NUMBER = 'NUMBER'
@@ -23,11 +25,13 @@ class NumberFormatType(StrEnum):
     DATE_TIME = 'DATE_TIME'
     SCIENTIFIC = 'SCIENTIFIC'
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#numberformat
 class NumberFormat(BaseModel):
     type_: NumberFormatType = Field(..., alias='type')
     pattern: str = None
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#style
 class Style(StrEnum):
     DOTTED = 'DOTTED'
     DASHED = 'DASHED'
@@ -37,10 +41,12 @@ class Style(StrEnum):
     NONE = 'NONE'
     DOUBLE = 'DOUBLE'
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#border
 class Border(BaseModel):
     style: Style
     color_style: ColorStyle | None = Field(None, serialization_alias='colorStyle')
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#borders
 class Borders(BaseModel):
     top: Border | None = None
     bottom: Border | None = None
@@ -56,6 +62,7 @@ class Borders(BaseModel):
         return values
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#padding
 class Padding(BaseModel):
     top: int | None
     right: int | None
@@ -71,17 +78,20 @@ class Padding(BaseModel):
         return values
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/other#horizontalalign
 class HorizontalAlignment(StrEnum):
     LEFT = 'LEFT'
     CENTER = 'CENTER'
     RIGHT = 'RIGHT'
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#verticalalign
 class VerticalAlignment(StrEnum):
     TOP = 'TOP'
     MIDDLE = 'MIDDLE'
     BOTTOM = 'BOTTOM'
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#wrapstrategy
 class WrapStrategy(StrEnum):
     OVERFLOW_CELL = 'OVERFLOW_CELL'
     # LEGACY_WRAP = 'LEGACY_WRAP'  # Not supported on all platforms
@@ -89,14 +99,17 @@ class WrapStrategy(StrEnum):
     WRAP = 'WRAP'
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#textdirection
 class TextDirection(StrEnum):
     LEFT_TO_RIGHT = 'LEFT_TO_RIGHT'
     RIGHT_TO_LEFT = 'RIGHT_TO_LEFT'
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/other#link
 class Link:
     uri: str = None
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/other#textformat
 class TextFormat(BaseModel):
     foreground_color_style: ColorStyle | None = Field(None, serialization_alias='foregroundColorStyle')
     font_family: str | None = Field(None, serialization_alias='fontFamily')
@@ -111,11 +124,13 @@ class TextFormat(BaseModel):
         arbitrary_types_allowed = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#hyperlinkdisplaytype
 class HyperlinkDisplayType(StrEnum):
     LINKED = 'LINKED'
     PLAIN_TEXT = 'PLAIN_TEXT'
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#textrotation
 class TextRotation(BaseModel):
     angle: int | None = Field(None, ge=-90, le=90)  # Angle between the standard orientation and the desired orientation, direction is counterclockwise
     vertical: bool | None = None  # Text reads top to bottom, but the orientation of individual characters is unchanged
@@ -129,6 +144,7 @@ class TextRotation(BaseModel):
         return values
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#cellformat
 class CellFormat(BaseModel):
     number_format: NumberFormat | None = Field(None, alias='numberFormat')
     background_color_style: ColorStyle | None = Field(None, alias='backgroundColorStyle')
@@ -197,13 +213,14 @@ class CellFormat(BaseModel):
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/other#extendedvalue
 class ExtendedValue(BaseModel):
     number_value: float | None = Field(None, alias='numberValue')
     string_value: str | None = Field(None, alias='stringValue')
     bool_value: bool | None = Field(None, alias='boolValue')
     formula_value: str | None = Field(None, alias='formulaValue')
 
-    # Read-only
+    # Read-only fields
     error_value: dict | None = Field(None, alias='errorValue')
 
     @model_validator(mode='before')
@@ -218,6 +235,7 @@ class ExtendedValue(BaseModel):
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/cells#celldata
 class CellData(BaseModel):
     user_entered_value: ExtendedValue | None = Field(None, alias='userEnteredValue')
     user_entered_format: CellFormat | None = Field(None, alias='userEnteredFormat')
@@ -228,7 +246,7 @@ class CellData(BaseModel):
     data_source_table: dict | None = Field(None, alias='dataSourceTable')
     data_source_formula: dict | None = Field(None, alias='dataSourceFormula')
 
-    # Read-only
+    # Read-only fields
     effective_value: ExtendedValue | None = Field(None, alias='effectiveValue')
     formatted_value: str | None = Field(None, alias='formattedValue')
     effective_format: CellFormat | None = Field(None, alias='effectiveFormat')
@@ -238,10 +256,12 @@ class CellData(BaseModel):
         populate_by_name = True
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/sheets#rowdata
 class RowData(BaseModel):
     values: list[CellData]
 
 
+# https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#updatecellsrequest
 class UpdateCells(BaseModel):
     range: GridRange
     rows: list[RowData] = []
