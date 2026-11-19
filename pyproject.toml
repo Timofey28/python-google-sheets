@@ -29,3 +29,8 @@ license-files = ["LICENSE*"]
 [project.urls]
 Homepage = "https://github.com/Timofey28/python-google-sheets"
 Issues = "https://github.com/Timofey28/python-google-sheets/issues"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+]

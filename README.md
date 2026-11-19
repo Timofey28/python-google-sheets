@@ -12,7 +12,7 @@ A lightweight and efficient Python wrapper for the Google Sheets API v4, leverag
 ## Table of Contents
 - [Features](#features)
 - [Installation](#installation)
-- [Quick Start](#quickstart)
+- [Quickstart](#quickstart)
 - [GoogleSheets methods](#googlesheets-methods)
 - [ApiRequest methods for batchUpdate](#apirequest-methods-for-batchupdate)
   - [Cell updates](#cell-updates)
@@ -21,7 +21,6 @@ A lightweight and efficient Python wrapper for the Google Sheets API v4, leverag
   - [Merge and freeze](#merge-and-freeze)
   - [Rows and columns](#rows-and-columns)
 - [Utility helpers](#utility-helpers)
-- [Full example: send multiple requests at once](#full-example-send-multiple-requests-at-once)
 - [Support & Feedback](#support--feedback)
 
 ## Installation
@@ -30,15 +29,185 @@ A lightweight and efficient Python wrapper for the Google Sheets API v4, leverag
 pip install python-google-sheets
 ```
 
+
 ## Quickstart
 
-```python
-from google_sheets import GoogleSheets
+Get started with `python-google-sheets` in a few steps: authenticate,
+connect to a spreadsheet, create a sheet, write and format data,
+and read the results.
 
-service = GoogleSheets.build_service('service_account.json')
-spreadsheet_id = '1abc...'
-sheet_id = 0
+### 1. Set up Google API credentials
+
+1. Create or select a project in
+   [Google Cloud Console](https://console.cloud.google.com/).
+2. Enable the **Google Sheets API**.
+3. Create a **service account** and download its JSON credentials.
+4. Save the credentials as `service_account.json` in your project
+   directory (or specify a custom path).
+5. Open an existing Google spreadsheet and share it with the
+   service account's email address, granting **Editor** access.
+
+> **Security:** Never commit service account credentials to Git.
+> Add `service_account.json` to your `.gitignore`.
+
+### 2. Connect to Google Sheets
+
+```python
+from google_sheets import GoogleSheets, ApiRequest, Dimension
+
+# Authenticate using service account credentials
+service = GoogleSheets.build_service("service_account.json")
+
+# ID from the spreadsheet URL:
+# https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit
+spreadsheet_id = "YOUR_SPREADSHEET_ID"
 ```
+
+The `service` object can be reused for multiple operations.
+
+### 3. Create a sheet
+
+Create a new sheet with custom dimensions and grouping settings:
+
+```python
+GoogleSheets.update_spreadsheet(
+    spreadsheet_id,
+    api_requests=[
+        ApiRequest.add_sheet(
+            title="Quickstart Example",
+            row_count=100,
+            column_count=10,
+            frozen_row_count=1,
+            hide_grid_lines=True,
+        )
+    ],
+    service=service,
+)
+```
+
+Retrieve the newly created sheet ID:
+
+```python
+spreadsheet = GoogleSheets.get_spreadsheet(
+    spreadsheet_id,
+    service=service,
+)
+
+sheet_id = next(
+    sheet.properties.sheet_id
+    for sheet in spreadsheet.sheets
+    if sheet.properties.title == "Quickstart Example"
+)
+```
+
+> **Note:** Sheet IDs are not the same as spreadsheet IDs.
+> Avoid assuming that a sheet always has ID `0`.
+
+### 4. Write data and format the sheet
+
+Use `ApiRequest` to build requests, then send them together
+in a single `batchUpdate` call:
+
+```python
+from google_sheets import CellFormat, TextFormat, Color_
+
+api_requests = [
+    # Write values
+    ApiRequest.update_cells(
+        sheet_id=sheet_id,
+        range_="A1:C4",
+        values=[
+            ["Product", "Quantity", "Revenue"],
+            ["Apples", 50, 1250],
+            ["Bananas", 30, 900],
+            ["Oranges", 20, 600],
+        ],
+    ),
+
+    # Format the header row
+    ApiRequest.update_cells(
+        sheet_id=sheet_id,
+        range_="A1:C1",
+        cell_formats=[
+            CellFormat(
+                background_color_style=Color_.Basic.LIGHT_BLUE_3,
+                text_format=TextFormat(bold=True),
+            )
+        ] * 3,
+    ),
+
+    # Set column widths
+    ApiRequest.set_column_width(
+        sheet_id=sheet_id,
+        col_no_or_letter="A",
+        width=180,
+    ),
+
+    # Group rows 2–4 (zero-based indexes)
+    ApiRequest.add_dimension_group(
+        sheet_id=sheet_id,
+        dimension=Dimension.ROWS,
+        start_index=1,
+        end_index=3,
+    ),
+]
+
+GoogleSheets.update_spreadsheet(
+    spreadsheet_id,
+    api_requests=api_requests,
+    service=service,
+)
+```
+
+All requests are executed together in one API batch.
+This reduces the number of HTTP requests and keeps related
+spreadsheet operations in one place.
+
+### 5. Read data
+
+Read values from the sheet using its name:
+
+```python
+result = GoogleSheets.get_spreadsheet_range_values(
+    spreadsheet_id,
+    sheets="Quickstart Example",
+    ranges="A1:C4",
+    service=service,
+)
+
+if result is not None:
+    rows = result[0][0]
+
+    for row in rows:
+        print(row)
+```
+
+Expected output:
+
+```text
+['Product', 'Quantity', 'Revenue']
+['Apples', 50, 1250]
+['Bananas', 30, 900]
+['Oranges', 20, 600]
+```
+
+The result is nested by sheet and range:
+`result[sheet_index][range_index][row_index]`.
+
+### Next steps
+
+Explore the sections below to learn more about:
+
+- Cell formatting and styling
+- Conditional formatting rules and gradients
+- Managing rows, columns, and sheets
+- Merging cells and freezing rows/columns
+- Reading multiple ranges across sheets in a single request
+- Working with nested row and column groups
+
+For additional details, see the
+[Google Sheets API documentation](https://developers.google.com/workspace/sheets/api/reference/rest).
+
 
 ---
 
@@ -298,7 +467,7 @@ req = ApiRequest.add_sheet(
 Delete a sheet.
 
 ```python
-req = ApiRequest.delete_sheet(sheet_id=3)
+req = ApiRequest.delete_sheet(sheet_id=1)
 ```
 
 ### `update_sheet_title(sheet_id: int, title: str) -> dict`
@@ -418,11 +587,11 @@ row_req, col_req = ApiRequest.set_standard_cell_dimensions(
 ### `hide_rows(sheet_id: int, start_index: int, end_index: int = None) -> dict`
 Hide one or more rows (Indexes are zero-based and inclusive [start_index, end_index]). If `end_index` is not provided, only the row at `start_index` will be hidden.
 
-### `hide_columns(sheet_id: int, start_index: int, end_index: int = None) -> dict`'
-Hide one or more columns (Indexes are zero-based and inclusive [start_index, end_index]). If `end_index` is not provided, only the column at `start_index` will be hidden.
-
 ### `unhide_rows(sheet_id: int, start_index: int, end_index: int = None) -> dict`
 Unhide one or more rows (Indexes are zero-based and inclusive [start_index, end_index]). If `end_index` is not provided, only the row at `start_index` will be unhidden.
+
+### `hide_columns(sheet_id: int, start_index: int, end_index: int = None) -> dict`'
+Hide one or more columns (Indexes are zero-based and inclusive [start_index, end_index]). If `end_index` is not provided, only the column at `start_index` will be hidden.
 
 ### `unhide_columns(sheet_id: int, start_index: int, end_index: int = None) -> dict`
 Unhide one or more columns (Indexes are zero-based and inclusive [start_index, end_index]). If `end_index` is not provided, only the column at `start_index` will be unhidden.
@@ -517,20 +686,6 @@ print(float_sum(0.1, 0.2, 0.3))  # 0.6
 ```
 
 ---
-
-## Full example: send multiple requests at once
-
-```python
-requests = [
-    ApiRequest.update_cells(sheet_id=0, range_='A1', values=['KPI']),
-    ApiRequest.freeze(sheet_id=0, rows=1),
-    ApiRequest.set_column_width(sheet_id=0, col_no_or_letter=1, width=240),
-]
-GoogleSheets.update_spreadsheet(spreadsheet_id, requests, service)
-```
-
----
-
 ## Support & Feedback
 
 If you have any questions, encounter issues, or want to suggest improvements:

@@ -6,10 +6,13 @@ __pycache__/
 venv/
 
 # Development
-*test*
 build/
 dist/
 *.egg-info/
 
 # Secrets
 service_account.json
+
+# Test files
+testing.py
+*.json

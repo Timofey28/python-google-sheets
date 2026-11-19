@@ -72,7 +72,7 @@ class GoogleSheets:
             else:
                 if emails is None and email is not None:
                     emails = [email]
-                for email in emails:
+                for email in emails or []:
                     permission = {
                         'type': 'user',
                         'role': 'writer',

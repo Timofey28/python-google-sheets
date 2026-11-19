@@ -1,0 +1,201 @@
+
+name: Publish to PyPI and GitHub Releases
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install pytest
+
+      - name: Verify version matches tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          import tomllib
+
+          tag = os.environ["TAG"]
+
+          if not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
+              raise SystemExit(f"Invalid release tag: {tag}")
+
+          with open("pyproject.toml", "rb") as f:
+              version = tomllib.load(f)["project"]["version"]
+
+          if tag != f"v{version}":
+              raise SystemExit(
+                  f"Tag {tag} does not match version {version}"
+              )
+
+          print(f"Version verified: {version}")
+          PY
+
+      - name: Verify changelog entry
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+      
+          version = os.environ["TAG"].removeprefix("v")
+          changelog = Path("CHANGELOG.md").read_text(
+              encoding="utf-8"
+          )
+      
+          header = f"## [{version}]"
+          lines = changelog.splitlines()
+      
+          start = next(
+              (i for i, line in enumerate(lines)
+               if line.startswith(header)),
+              None
+          )
+
+      - name: Run tests
+        run: python -m pytest -v
+
+  build:
+    name: Build package
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install build tools
+        run: python -m pip install build twine
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Check distributions
+        run: python -m twine check dist/*
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/python-google-sheets
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package
+          path: dist/
+
+      - name: Publish package
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: Create GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract release notes
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          version = os.environ["TAG"].removeprefix("v")
+          changelog = Path("CHANGELOG.md").read_text(
+              encoding="utf-8"
+          )
+
+          header = f"## [{version}]"
+          lines = changelog.splitlines()
+
+          start = next(
+              (i for i, line in enumerate(lines)
+               if line.startswith(header)),
+              None
+          )
+
+          if start is None:
+              raise SystemExit(f"No changelog for {version}")
+
+          end = next(
+              (i for i in range(start + 1, len(lines))
+               if lines[i].startswith("## [")),
+              len(lines)
+          )
+
+          notes = "\n".join(lines[start + 1:end]).strip()
+
+          if not notes:
+              raise SystemExit("Release notes are empty")
+
+          Path("release-notes.md").write_text(
+              notes + "\n",
+              encoding="utf-8"
+          )
+          PY
+
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package
+          path: dist/
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" dist/* \
+            --title "$TAG" \
+            --notes-file "release-notes.md" \
+            --verify-tag
