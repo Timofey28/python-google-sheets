@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 SimpleType = str | int | float | bool
 RangeData = list[list[SimpleType]]

@@ -1,17 +1,29 @@
-# IDE
-.idea/
+# Python bytecode
 __pycache__/
+*.py[cod]
 
-# Venv
+# Virtual environments
+.venv/
 venv/
+env/
 
-# Development
+# Build artifacts
 build/
 dist/
 *.egg-info/
 
-# Secrets
+# IDE settings
+.idea/
+.vscode/
+
+# Environment variables and credentials
+.env
+.env.*
 service_account.json
+
+# OS files
+.DS_Store
+Thumbs.db
 
 # Test files
 testing.py
